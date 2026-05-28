@@ -76,8 +76,12 @@ create policy "sp_matches_insert" on sp_matches for insert with check (auth.uid(
 -- Rooms: читать могут все (чтобы зайти по коду), писать — участники
 create policy "mp_rooms_select" on mp_rooms for select using (true);
 create policy "mp_rooms_insert" on mp_rooms for insert with check (auth.uid() = host_id);
+-- Allow host & guest to update, AND allow any authenticated user to join a waiting room
+-- (needed because guest_id is NULL before the guest joins, so "= guest_id" would not match)
 create policy "mp_rooms_update" on mp_rooms for update using (
-  auth.uid() = host_id or auth.uid() = guest_id
+  auth.uid() = host_id
+  or auth.uid() = guest_id
+  or (status = 'waiting' and guest_id is null)
 );
 
 -- MP matches: только своё

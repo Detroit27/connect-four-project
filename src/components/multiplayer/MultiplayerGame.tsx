@@ -3,6 +3,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { dropChip, checkWin, isBoardFull } from '../../lib/gameLogic'
 import { pushMove as dbPushMove, subscribeToRoom, saveMpMatch, forfeitRoom } from '../../lib/multiplayer'
 import { supabase } from '../../lib/supabase'
+import { playClick } from '../../lib/sound'
 import { useShopStore } from '../../store/shopStore'
 import { useAuthStore } from '../../store/authStore'
 import { useGameStore } from '../../store/gameStore'
@@ -20,8 +21,9 @@ interface Props {
   onExit: () => void
 }
 
-const WIN_COINS = 50
-const LOSS_COINS = 10
+// MP rewards are higher than SP to incentivise online play
+const WIN_COINS  = 80
+const LOSS_COINS = 15
 
 export function MultiplayerGame({
   roomCode, initialBoard, initialMoves, myPlayer, opponentUsername, onExit,
@@ -95,6 +97,7 @@ export function MultiplayerGame({
     if (!isMyTurn || ended) return
     const next = dropChip(board, col, currentPlayer)
     if (!next) return
+    playClick()
     const newMoves  = [...moves, col]
     const nextPlayer: Player = currentPlayer === 1 ? 2 : 1
     const win  = checkWin(next)

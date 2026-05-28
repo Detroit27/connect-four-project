@@ -52,10 +52,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signUp: async (email, password, username) => {
     set({ authError: null })
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    // Pass username in metadata so the DB trigger picks it up
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username } },
+    })
     if (error) { set({ authError: error.message }); throw error }
     if (data.user) {
-      await supabase.from('profiles').insert({
+      // Upsert so we win over the trigger's fallback (email-prefix) if it already ran
+      await supabase.from('profiles').upsert({
         id: data.user.id,
         username,
         currency: 0,

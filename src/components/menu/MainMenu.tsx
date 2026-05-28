@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { useAuthStore } from '../../store/authStore'
 import { useT } from '../../i18n'
 import { MenuTile } from './MenuTile'
+import { startBgMusic, stopBgMusic } from '../../lib/sound'
 import type { Screen } from '../../types'
 import styles from './MainMenu.module.css'
 
@@ -20,6 +22,12 @@ export function MainMenu({ onAuthClick }: Props) {
   const { setScreen } = useGameStore()
   const { user, profile, signOut } = useAuthStore()
   const t = useT()
+
+  // Optional background music — plays if /public/music.mp3 exists
+  useEffect(() => {
+    startBgMusic()
+    return () => stopBgMusic()
+  }, [])
 
   return (
     <div className={styles.root}>

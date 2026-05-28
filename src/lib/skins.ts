@@ -1,84 +1,88 @@
 export interface Skin {
   id: string
-  nameKey: string   // ключ в t.shop.skins
-  price: number     // 0 = бесплатно
-  p1Color: string   // ТВОИ фишки
+  nameKey: string   // key in t.shop.skins
+  price: number     // 0 = free
+  p1Color: string   // YOUR chips
   p1Shadow: string
   /**
-   * Необязательно. Путь к текстуре чипа.
-   * Клади файл в /public/skins/<имя>.png
-   * Формат: PNG или JPG, квадрат, минимум 200×200px.
-   * Пример: '/skins/marble.png'
-   * Текстура накладывается поверх цвета с режимом смешивания overlay.
+   * Optional texture.  Put the file in /public/skins/<name>.png
+   * Format: PNG or JPG, square, min 200×200 px.
+   * Example: '/skins/marble.png'
+   * The texture is rendered over the colour using background-image.
+   *
+   * HOW TO ADD A CUSTOM SKIN:
+   * 1. Add an object to the SKINS array below.
+   * 2. In src/i18n/en.ts → shop.skins → add:  yourId: 'Your Name'
+   * 3. In src/i18n/ru.ts → shop.skins → add:  yourId: 'Название'
+   * 4. If you have a texture — put it in /public/skins/ and set image: '/skins/yourfile.png'
+   * 5. Set the price (0 = free).
    */
   image?: string
 }
 
-/**
- * КАК ДОБАВИТЬ НОВЫЙ СКИН:
- * 1. Добавь объект в массив SKINS ниже
- * 2. В src/i18n/en.ts → shop.skins → добавь: yourId: 'Your Name'
- * 3. В src/i18n/ru.ts → shop.skins → добавь: yourId: 'Название'
- * 4. Если есть текстура — положи PNG в /public/skins/ и укажи image: '/skins/yourfile.png'
- */
 export const SKINS: Skin[] = [
+  // ─── FREE ────────────────────────────────────────────────────────────────
   {
     id: 'classic',
     nameKey: 'classic',
     price: 0,
-    p1Color: '#C4644A',
-    p1Shadow: 'rgba(196,100,74,0.28)',
+    p1Color: '#E63946',
+    p1Shadow: 'rgba(230,57,70,0.30)',
   },
+  // ─── CHEAP (affordable after a few games) ────────────────────────────────
   {
     id: 'slate',
     nameKey: 'slate',
-    price: 50,
-    p1Color: '#4A6B8A',
-    p1Shadow: 'rgba(74,107,138,0.28)',
+    price: 120,
+    p1Color: '#3B82F6',
+    p1Shadow: 'rgba(59,130,246,0.30)',
   },
+  // ─── MID-TIER ─────────────────────────────────────────────────────────────
   {
     id: 'forest',
     nameKey: 'forest',
-    price: 80,
-    p1Color: '#2D6A4F',
-    p1Shadow: 'rgba(45,106,79,0.28)',
+    price: 500,
+    p1Color: '#16A34A',
+    p1Shadow: 'rgba(22,163,74,0.30)',
   },
   {
     id: 'dusk',
     nameKey: 'dusk',
-    price: 120,
-    p1Color: '#7B4EA6',
-    p1Shadow: 'rgba(123,78,166,0.28)',
+    price: 1000,
+    p1Color: '#9333EA',
+    p1Shadow: 'rgba(147,51,234,0.30)',
   },
+  // ─── RARE ────────────────────────────────────────────────────────────────
   {
     id: 'obsidian',
     nameKey: 'obsidian',
-    price: 180,
-    p1Color: '#1C1C1E',
-    p1Shadow: 'rgba(28,28,30,0.40)',
+    price: 2000,
+    p1Color: '#18181B',
+    p1Shadow: 'rgba(24,24,27,0.45)',
   },
   {
     id: 'gold',
     nameKey: 'gold',
-    price: 250,
-    p1Color: '#C9A84C',
-    p1Shadow: 'rgba(201,168,76,0.32)',
+    price: 3500,
+    p1Color: '#F59E0B',
+    p1Shadow: 'rgba(245,158,11,0.38)',
   },
 ]
 
-export const DEFAULT_P2_COLOR  = '#4A7B6F'
-export const DEFAULT_P2_SHADOW = 'rgba(74,123,111,0.25)'
+// Opponent chip colour — always the same regardless of your skin
+export const DEFAULT_P2_COLOR  = '#4F56E3'
+export const DEFAULT_P2_SHADOW = 'rgba(79,86,227,0.30)'
 
 export function getSkin(id: string): Skin {
   return SKINS.find(s => s.id === id) ?? SKINS[0]
 }
 
-/** Применяет скин — меняет ТОЛЬКО фишки игрока 1 (тебя) */
+/** Apply skin — changes ONLY player-1 (your) chips */
 export function applySkinVars(skin: Skin) {
   const r = document.documentElement
   r.style.setProperty('--player1', skin.p1Color)
   r.style.setProperty('--player1-shadow', skin.p1Shadow)
-  // p2 всегда дефолтный
+  // p2 is always the default colour
   r.style.setProperty('--player2', DEFAULT_P2_COLOR)
   r.style.setProperty('--player2-shadow', DEFAULT_P2_SHADOW)
 }

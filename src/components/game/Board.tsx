@@ -55,7 +55,7 @@ export function Board({ onColumnClick, winInfo, boardOverride, disableClick }: P
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
                           } : undefined}
-                          initial={boardOverride ? false : { y: -((getDropRow(board, col) ?? row) + 1) * 64 - 64 }}
+                          initial={boardOverride ? { y: 0, opacity: 1 } : { y: -((getDropRow(board, col) ?? row) + 1) * 64 - 64 }}
                           animate={{ y: 0 }}
                           transition={{ type: 'spring', stiffness: 280, damping: 22, mass: 0.8 }}
                         />

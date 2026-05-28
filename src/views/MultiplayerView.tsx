@@ -114,7 +114,25 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     const player: Player = activeRoom.host_id === user.id ? 1 : 2
     setMyPlayer(player)
     setRoom(activeRoom)
-    setMpScreen(activeRoom.status === 'waiting' ? 'waiting' : 'game')
+    if (activeRoom.status === 'waiting') {
+      setMpScreen('waiting')
+      // Re-start polling so the waiting screen auto-transitions when opponent joins
+      const interval = setInterval(async () => {
+        try {
+          const { data } = await supabase
+            .from('mp_rooms').select().eq('code', activeRoom.code).maybeSingle() as any
+          if (data?.guest_id) {
+            setRoom(data as Room)
+            setActiveRoom(null)
+            setMpScreen('game')
+            clearInterval(interval)
+          }
+        } catch { /* ignore */ }
+      }, 2000)
+    } else {
+      setActiveRoom(null)
+      setMpScreen('game')
+    }
   }
 
   // --- Forfeit active room from lobby ---

@@ -1,48 +1,166 @@
 .container {
-  display: flex; gap: 32px;
+  display: flex;
+  gap: 32px;
   padding: 36px clamp(16px, 5vw, 40px);
-  max-width: 820px; margin: 0 auto; width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
   align-items: flex-start;
 }
-@media (max-width: 600px) { .container { flex-direction: column; } }
+
+/* ── Preview panel ─────────────────────────────── */
 .preview {
-  width: 200px; flex-shrink: 0;
-  display: flex; flex-direction: column; gap: 16px;
-  position: sticky; top: 32px;
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: sticky;
+  top: 32px;
 }
-@media (max-width: 600px) { .preview { width: 100%; position: static; } }
+
 .previewTitle {
-  font-family: var(--font-serif); font-size: 16px;
-  font-weight: 600; color: var(--text);
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
 }
+
 .chipPreview {
-  display: flex; gap: 20px; align-items: flex-start;
-  padding: 24px; background: var(--surface);
-  border-radius: var(--radius-lg); border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 24px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border);
 }
-.chipSlot { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.chipP1, .chipP2 { width: 60px; height: 60px; border-radius: 50%; }
-.chipLabel { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-.skinName { font-size: 13px; color: var(--text-muted); }
+
+/* Single big chip — only yours */
+.chipBig {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skinName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: center;
+}
+
 .balance {
-  display: flex; flex-direction: column; gap: 2px;
-  padding: 14px 16px; background: var(--surface);
-  border-radius: var(--radius-md); border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
 }
-.balanceLabel { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-.balanceValue { font-size: 18px; font-weight: 500; color: var(--accent); }
-.list { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+.balanceLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.balanceValue {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── Skin list ─────────────────────────────────── */
+.list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
 .item {
-  display: flex; align-items: center; gap: 16px;
-  padding: 16px 20px; background: var(--surface);
-  border-radius: var(--radius-md); border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
   transition: border-color var(--transition);
 }
+
 .item.equipped { border-color: var(--accent); }
-.itemChips { display: flex; gap: 6px; flex-shrink: 0; }
-.smallChip { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
-.itemInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.itemName { font-size: 14px; font-weight: 500; color: var(--text); }
-.price { font-size: 12px; color: var(--text-muted); }
+
+/* Single chip per row */
+.smallChip {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.itemInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.price {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .itemAction { flex-shrink: 0; }
-.equippedBadge { font-size: 12px; color: var(--accent); font-weight: 500; }
+
+.equippedBadge {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Mobile ─────────────────────────────────────── */
+@media (max-width: 620px) {
+  .container {
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px 16px;
+  }
+
+  .preview {
+    width: 100%;
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .previewTitle { width: 100%; }
+
+  .chipPreview {
+    padding: 20px;
+    flex: 0 0 auto;
+  }
+
+  .chipBig {
+    width: 72px;
+    height: 72px;
+  }
+
+  .skinName { text-align: left; }
+
+  .balance { flex: 1; }
+}
