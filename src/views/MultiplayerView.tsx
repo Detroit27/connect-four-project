@@ -72,10 +72,17 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     sync()
     const poll = setInterval(sync, 750)
 
+    // Background tabs throttle setInterval, so re-check the moment we're focused again
+    const onWake = () => { if (!document.hidden) sync() }
+    window.addEventListener('focus', onWake)
+    document.addEventListener('visibilitychange', onWake)
+
     return () => {
       stopped = true
       channel.unsubscribe()
       clearInterval(poll)
+      window.removeEventListener('focus', onWake)
+      document.removeEventListener('visibilitychange', onWake)
     }
   }, [waitingCode, user?.id])
 

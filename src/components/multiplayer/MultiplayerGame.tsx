@@ -42,6 +42,7 @@ export function MultiplayerGame({
   const [isDraw, setIsDraw]               = useState(false)
   const [forfeitWinner, setForfeitWinner] = useState<Player | null>(null)
   const [saved, setSaved]                 = useState(false)
+  const [syncError, setSyncError]         = useState(false)
   const boardRef = useRef<BoardType>(initialBoard)
   const movesRef = useRef<number[]>(initialMoves)
 
@@ -90,6 +91,10 @@ export function MultiplayerGame({
   }, [roomCode, applyRoom])
 
   // --- Polling fallback (in case Realtime isn't enabled in Supabase dashboard) ---
+  // NOTE: browsers throttle setInterval in background tabs (down to ~1/min), so
+  // this poll effectively stalls when the tab isn't focused. The focus/visibility
+  // listener below re-syncs the instant the tab comes back, which is what makes
+  // two-window testing reliable without a manual refresh.
   useEffect(() => {
     if (ended) return
     const sync = async () => {
@@ -101,10 +106,18 @@ export function MultiplayerGame({
       }
     }
     sync()
-    const timer = setInterval(async () => {
-      await sync()
-    }, POLL_MS)
-    return () => clearInterval(timer)
+    const timer = setInterval(sync, POLL_MS)
+
+    // Re-sync immediately whenever the tab regains focus / becomes visible
+    const onWake = () => { if (!document.hidden) sync() }
+    window.addEventListener('focus', onWake)
+    document.addEventListener('visibilitychange', onWake)
+
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', onWake)
+      document.removeEventListener('visibilitychange', onWake)
+    }
   }, [roomCode, ended, applyRoom])
 
   // --- Save result, award coins, update leaderboard ---
@@ -150,24 +163,46 @@ export function MultiplayerGame({
     const next = dropChip(board, col, currentPlayer)
     if (!next) return
     playClick()
+
+    // Snapshot to roll back to if the write fails
+    const prevBoard  = boardRef.current
+    const prevMoves  = movesRef.current
+    const prevPlayer = currentPlayer
+
     const newMoves    = [...moves, col]
     const nextPlayer: Player = currentPlayer === 1 ? 2 : 1
     const win  = checkWin(next)
     const draw = !win && isBoardFull(next)
+
+    // Optimistic local update
     boardRef.current = next
     movesRef.current = newMoves
     setBoard(next); setMoves(newMoves); setCurrentPlayer(nextPlayer)
     if (win)  setWinInfo(win)
     if (draw) setIsDraw(true)
+    setSyncError(false)
+
+    const writeMove = () => dbPushMove(
+      roomCode, next, newMoves, nextPlayer,
+      win || draw ? 'finished' : undefined,
+      win ? win.winner : draw ? 0 : undefined,
+    )
+
     try {
-      await dbPushMove(
-        roomCode, next, newMoves, nextPlayer,
-        win || draw ? 'finished' : undefined,
-        win ? win.winner : draw ? 0 : undefined,
-      )
+      // Retry once — a single transient failure shouldn't lose the move
+      try { await writeMove() }
+      catch (e1) { console.warn('[MP] move write retry', e1); await writeMove() }
       const latest = await getRoomByCode(roomCode)
       if (latest) applyRoom(latest as Record<string, unknown>)
-    } catch (err) { console.error(err) }
+    } catch (err) {
+      // Write truly failed — roll back so the player can try again, and warn them
+      console.error('[MP] move write failed, rolling back:', err)
+      boardRef.current = prevBoard
+      movesRef.current = prevMoves
+      setBoard(prevBoard); setMoves(prevMoves); setCurrentPlayer(prevPlayer)
+      setWinInfo(null); setIsDraw(false)
+      setSyncError(true)
+    }
   }
 
   // --- Forfeit ---
@@ -225,7 +260,11 @@ export function MultiplayerGame({
 
       {/* -- Turn / thinking indicator -- */}
       <div className={styles.turnBar}>
-        {ended ? null : isMyTurn ? (
+        {ended ? null : syncError ? (
+          <span className={styles.thinkingLabel} style={{ color: '#dc2626' }}>
+            {t.common.error} — {t.multiplayer.yourTurn}
+          </span>
+        ) : isMyTurn ? (
           <span className={styles.yourTurnLabel}>{t.multiplayer.yourTurn}</span>
         ) : (
           <span className={styles.thinkingLabel}>
