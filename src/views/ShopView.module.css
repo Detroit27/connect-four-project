@@ -1,126 +1,77 @@
 .container {
   display: flex;
-  gap: 32px;
-  padding: 36px clamp(16px, 5vw, 40px);
-  max-width: 860px;
+  flex-direction: column;
+  gap: 24px;
+  padding: 36px clamp(20px, 5vw, 56px);
+  max-width: 920px;
   margin: 0 auto;
   width: 100%;
-  align-items: flex-start;
 }
 
-/* ── Preview panel ─────────────────────────────── */
-.preview {
-  width: 240px;
-  flex-shrink: 0;
+/* ── Balance bar ── */
+.balanceBar {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
-  position: sticky;
-  top: 32px;
-}
-
-.previewTitle {
-  font-family: var(--font-serif);
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.chipPreview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 36px 24px;
-  background: var(--surface);
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 20px 26px;
+  background: rgba(12, 14, 32, 0.74);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
-  border: 1.5px solid var(--border);
-}
-
-.chipBig {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.skinName {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
-  text-align: center;
-}
-
-.balance {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px 18px;
-  background: var(--surface);
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--border);
 }
 
 .balanceLabel {
-  font-size: 11px;
-  color: var(--text-muted);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.50);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.08em;
 }
 
 .balanceValue {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
   color: var(--accent);
 }
 
-/* ── Right list column ─────────────────────────── */
-.list {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
+/* ── Section labels ── */
 .sectionLabel {
   font-family: var(--font-serif);
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.90);
   letter-spacing: -0.01em;
-  margin-top: 8px;
-  margin-bottom: 2px;
+  margin-top: 12px;
 }
 
-/* ── Cases row ─────────────────────────────────── */
+/* ── Cases ── */
 .casesRow {
   display: flex;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 14px;
   flex-wrap: wrap;
 }
 
 .caseCard {
-  flex: 1 1 160px;
+  flex: 1 1 220px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 16px;
-  background: var(--surface);
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--border);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  gap: 14px;
+  padding: 22px;
+  background: rgba(12, 14, 32, 0.74);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
   align-items: flex-start;
 }
+
 .caseCard:hover {
   border-color: var(--case-color, var(--accent));
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.30);
 }
 
-.caseIcon {
-  display: flex;
-  align-items: center;
-}
+.caseIcon { display: flex; align-items: center; }
 
 .caseChip {
   border-radius: 50%;
@@ -131,123 +82,100 @@
 .caseInfo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   flex: 1;
   min-width: 0;
 }
 
 .caseName {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.92);
 }
 
-.caseRarities {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
+.caseRarities { display: flex; gap: 5px; align-items: center; }
 
 .rarityDot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   display: inline-block;
 }
 
-.casePrice {
-  font-size: 12px;
-  color: var(--text-muted);
+.casePrice { font-size: 14px; color: rgba(255, 255, 255, 0.55); }
+
+.caseBtn {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
-/* ── Skin list ─────────────────────────────────── */
-.item {
+/* ── Skin grid ── */
+.skinGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.skinCard {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  background: var(--surface);
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--border);
-  transition: border-color var(--transition);
+  gap: 12px;
+  padding: 22px 16px;
+  background: rgba(12, 14, 32, 0.74);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-lg);
+  transition: border-color 180ms ease, transform 180ms ease;
 }
 
-.item.equipped { border-color: var(--accent); }
+.skinCard:hover {
+  border-color: rgba(255, 255, 255, 0.20);
+  transform: translateY(-3px);
+}
 
-.smallChip {
-  width: 40px;
-  height: 40px;
+.ownedCard { border-color: rgba(110, 116, 239, 0.45); }
+
+.skinChip {
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.itemInfo {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.itemName {
+.skinName {
   font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  text-align: center;
 }
 
-.price {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.caseOnlyBadge {
-  font-size: 11px;
-  color: #9333EA;
-  font-weight: 500;
-}
-
-.itemAction { flex-shrink: 0; }
-
-.equippedBadge {
-  font-size: 12px;
-  color: var(--accent);
+.buyBtn {
+  padding: 9px 18px;
+  font-size: 13px;
   font-weight: 600;
 }
 
-/* ── Mobile ─────────────────────────────────────── */
-@media (max-width: 620px) {
-  .container {
-    flex-direction: column;
-    gap: 24px;
-    padding: 24px 16px;
-  }
+.ownedBadge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 9px 0;
+}
 
-  .preview {
-    width: 100%;
-    position: static;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px;
-  }
+.freeBadge {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 9px 0;
+}
 
-  .previewTitle { width: 100%; }
-
-  .chipPreview {
-    padding: 20px;
-    flex: 0 0 auto;
-  }
-
-  .chipBig {
-    width: 72px;
-    height: 72px;
-  }
-
-  .skinName { text-align: left; }
-
-  .balance { flex: 1; }
-
-  .casesRow { gap: 8px; }
-
-  .caseCard { flex: 1 1 100%; }
+/* ── Mobile ── */
+@media (max-width: 560px) {
+  .container { padding: 24px 16px; }
+  .caseCard  { flex: 1 1 100%; }
+  .skinGrid  { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
 }

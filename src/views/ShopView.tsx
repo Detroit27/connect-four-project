@@ -7,6 +7,7 @@ import { CASES, RARITY_COLORS } from '../lib/cases'
 import { playCaseOpen } from '../lib/sound'
 import { CaseOpenModal } from '../components/shop/CaseOpenModal'
 import type { Rarity } from '../lib/cases'
+import type { Skin } from '../lib/skins'
 import styles from './ShopView.module.css'
 
 interface PendingOpen {
@@ -16,21 +17,21 @@ interface PendingOpen {
   isDuplicate: boolean
 }
 
+// All directly-purchasable skins, basic colours first then characters
+const BUYABLE: Skin[] = [...SKINS, ...CASE_SKINS]
+
 export function ShopView() {
   const t = useT()
-  const { currency, currentSkin, buySkin, openCase, equipSkin, owns } = useShopStore()
+  const { currency, buySkin, openCase, owns } = useShopStore()
   const { updateSkinOnServer } = useAuthStore()
-  const skin = getSkin(currentSkin)
 
   const [pendingOpen, setPendingOpen] = useState<PendingOpen | null>(null)
 
-  const handleEquip = (id: string) => {
-    equipSkin(id)
-    updateSkinOnServer(id, useShopStore.getState().inventory)
-  }
-
   const handleBuy = (id: string) => {
-    if (buySkin(id)) handleEquip(id)
+    if (buySkin(id)) {
+      // Persist new inventory (skin acquisition only — equipping happens on the menu)
+      updateSkinOnServer(useShopStore.getState().currentSkin, useShopStore.getState().inventory)
+    }
   }
 
   const handleOpenCase = (caseId: string) => {
@@ -45,8 +46,8 @@ export function ShopView() {
     })
   }
 
-  const handleClaim = (skinId: string) => {
-    handleEquip(skinId)
+  const handleClaim = () => {
+    updateSkinOnServer(useShopStore.getState().currentSkin, useShopStore.getState().inventory)
     setPendingOpen(null)
   }
 
@@ -60,177 +61,110 @@ export function ShopView() {
           winnerSkinId={pendingOpen.winnerSkinId}
           winnerRarity={pendingOpen.winnerRarity}
           isDuplicate={pendingOpen.isDuplicate}
-          onClose={() => handleClaim(pendingOpen.winnerSkinId)}
+          onClose={handleClaim}
         />
       )}
 
-      {/* ── Left panel: preview + balance ── */}
-      <aside className={styles.preview}>
-        <h3 className={styles.previewTitle}>{t.shop.yourSkin}</h3>
+      {/* ── Balance header ── */}
+      <div className={styles.balanceBar}>
+        <span className={styles.balanceLabel}>{t.shop.balance}</span>
+        <span className={styles.balanceValue}>{currency} {t.shop.coins}</span>
+      </div>
 
-        <div className={styles.chipPreview}>
-          <div
-            className={styles.chipBig}
-            style={{
-              background: skin.p1Color,
-              backgroundImage: skin.image ? `url(${skin.image})` : undefined,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              boxShadow: `inset 0 -6px 14px rgba(0,0,0,0.16), 0 10px 30px ${skin.p1Shadow}${skin.glowColor ? `, 0 0 30px ${skin.glowColor}` : ''}`,
-            }}
-          />
-        </div>
-
-        <p className={styles.skinName}>
-          {t.shop.skins[skin.id as keyof typeof t.shop.skins] ?? skin.id}
-        </p>
-
-        <div className={styles.balance}>
-          <span className={styles.balanceLabel}>{t.shop.balance}</span>
-          <span className={styles.balanceValue}>{currency} {t.shop.coins}</span>
-        </div>
-      </aside>
-
-      {/* ── Right panel: cases + skins ── */}
-      <div className={styles.list}>
-
-        {/* Cases section */}
-        <h3 className={styles.sectionLabel}>{t.shop.casesTitle}</h3>
-        <div className={styles.casesRow}>
-          {CASES.map(c => (
-            <div key={c.id} className={styles.caseCard} style={{ '--case-color': c.color } as React.CSSProperties}>
-              {/* Case icon – a styled chip cluster */}
-              <div className={styles.caseIcon}>
-                {c.items.slice(0, 3).map((item, idx) => {
-                  const s = getSkin(item.skinId)
-                  return (
-                    <div
-                      key={idx}
-                      className={styles.caseChip}
-                      style={{
-                        background: s.p1Color,
-                        boxShadow: `inset 0 -2px 5px rgba(0,0,0,0.18)`,
-                        zIndex: 3 - idx,
-                        marginLeft: idx > 0 ? -10 : 0,
-                        width: 30 - idx * 3,
-                        height: 30 - idx * 3,
-                      }}
-                    />
-                  )
-                })}
-              </div>
-
-              <div className={styles.caseInfo}>
-                <span className={styles.caseName}>
-                  {t.shop.cases[c.id as keyof typeof t.shop.cases] ?? c.nameKey}
-                </span>
-                {/* Rarity breakdown */}
-                <div className={styles.caseRarities}>
-                  {c.items.map((item, idx) => (
-                    <span
-                      key={idx}
-                      className={styles.rarityDot}
-                      style={{ background: RARITY_COLORS[item.rarity] }}
-                      title={item.rarity}
-                    />
-                  ))}
-                </div>
-                <span className={styles.casePrice}>{c.price} {t.shop.coins}</span>
-              </div>
-
-              <button
-                className="btn-primary"
-                onClick={() => handleOpenCase(c.id)}
-                disabled={currency < c.price}
-                style={{ fontSize: 12, padding: '8px 16px', flexShrink: 0 }}
-              >
-                {t.shop.openCase}
-              </button>
+      {/* ── Cases ── */}
+      <h3 className={styles.sectionLabel}>{t.shop.casesTitle}</h3>
+      <div className={styles.casesRow}>
+        {CASES.map(c => (
+          <div key={c.id} className={styles.caseCard} style={{ '--case-color': c.color } as React.CSSProperties}>
+            <div className={styles.caseIcon}>
+              {c.items.slice(0, 3).map((item, idx) => {
+                const s = getSkin(item.skinId)
+                return (
+                  <div
+                    key={idx}
+                    className={styles.caseChip}
+                    style={{
+                      background: s.p1Color,
+                      backgroundImage: s.image ? `url(${s.image})` : undefined,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      boxShadow: `inset 0 -2px 5px rgba(0,0,0,0.18)`,
+                      zIndex: 3 - idx,
+                      marginLeft: idx > 0 ? -14 : 0,
+                      width: 46 - idx * 4,
+                      height: 46 - idx * 4,
+                    }}
+                  />
+                )
+              })}
             </div>
-          ))}
-        </div>
 
-        {/* Purchasable skins */}
-        <h3 className={styles.sectionLabel}>{t.shop.title}</h3>
+            <div className={styles.caseInfo}>
+              <span className={styles.caseName}>
+                {t.shop.cases[c.id as keyof typeof t.shop.cases] ?? c.nameKey}
+              </span>
+              <div className={styles.caseRarities}>
+                {c.items.map((item, idx) => (
+                  <span
+                    key={idx}
+                    className={styles.rarityDot}
+                    style={{ background: RARITY_COLORS[item.rarity] }}
+                    title={item.rarity}
+                  />
+                ))}
+              </div>
+              <span className={styles.casePrice}>{c.price} {t.shop.coins}</span>
+            </div>
 
-        {SKINS.map(s => {
-          const owned    = owns(s.id)
-          const equipped = currentSkin === s.id
+            <button
+              className={`btn-primary ${styles.caseBtn}`}
+              onClick={() => handleOpenCase(c.id)}
+              disabled={currency < c.price}
+            >
+              {t.shop.openCase}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Skins (acquire only) ── */}
+      <h3 className={styles.sectionLabel}>{t.shop.title}</h3>
+      <div className={styles.skinGrid}>
+        {BUYABLE.map(s => {
+          const owned = owns(s.id)
+          const free  = s.price === 0
           return (
-            <div key={s.id} className={`${styles.item} ${equipped ? styles.equipped : ''}`}>
+            <div key={s.id} className={`${styles.skinCard} ${owned ? styles.ownedCard : ''}`}>
               <div
-                className={styles.smallChip}
+                className={styles.skinChip}
                 style={{
                   background: s.p1Color,
                   backgroundImage: s.image ? `url(${s.image})` : undefined,
                   backgroundSize: 'cover',
-                  boxShadow: `inset 0 -2px 5px rgba(0,0,0,0.14), 0 3px 10px ${s.p1Shadow}`,
+                  backgroundPosition: 'center',
+                  boxShadow: `inset 0 -4px 10px rgba(0,0,0,0.18), 0 6px 18px ${s.p1Shadow}${s.glowColor ? `, 0 0 18px ${s.glowColor}` : ''}`,
                 }}
               />
-              <div className={styles.itemInfo}>
-                <span className={styles.itemName}>
-                  {t.shop.skins[s.id as keyof typeof t.shop.skins] ?? s.id}
-                </span>
-                {s.price > 0 && !owned && (
-                  <span className={styles.price}>{s.price} {t.shop.coins}</span>
-                )}
-                {s.price === 0 && !equipped && (
-                  <span className={styles.price}>Free</span>
-                )}
-              </div>
-              <div className={styles.itemAction}>
-                {equipped ? (
-                  <span className={styles.equippedBadge}>{t.shop.equipped}</span>
-                ) : owned ? (
-                  <button className="btn-ghost" onClick={() => handleEquip(s.id)}>{t.shop.owned}</button>
-                ) : (
-                  <button
-                    className="btn-primary"
-                    onClick={() => handleBuy(s.id)}
-                    disabled={currency < s.price}
-                    style={{ fontSize: 13, padding: '8px 20px' }}
-                  >
-                    {t.shop.buy}
-                  </button>
-                )}
-              </div>
+              <span className={styles.skinName}>
+                {t.shop.skins[s.id as keyof typeof t.shop.skins] ?? s.id}
+              </span>
+
+              {owned ? (
+                <span className={styles.ownedBadge}>✓ {t.shop.ownedLabel}</span>
+              ) : free ? (
+                <span className={styles.freeBadge}>Free</span>
+              ) : (
+                <button
+                  className={`btn-primary ${styles.buyBtn}`}
+                  onClick={() => handleBuy(s.id)}
+                  disabled={currency < s.price}
+                >
+                  {s.price} {t.shop.coins}
+                </button>
+              )}
             </div>
           )
         })}
-
-        {/* Case-exclusive skins (only show if owned) */}
-        {CASE_SKINS.some(s => owns(s.id)) && (
-          <>
-            <h3 className={styles.sectionLabel} style={{ marginTop: 8 }}>Case Skins</h3>
-            {CASE_SKINS.filter(s => owns(s.id)).map(s => {
-              const equipped = currentSkin === s.id
-              return (
-                <div key={s.id} className={`${styles.item} ${equipped ? styles.equipped : ''}`}>
-                  <div
-                    className={styles.smallChip}
-                    style={{
-                      background: s.p1Color,
-                      boxShadow: `inset 0 -2px 5px rgba(0,0,0,0.14), 0 3px 10px ${s.p1Shadow}${s.glowColor ? `, 0 0 12px ${s.glowColor}` : ''}`,
-                    }}
-                  />
-                  <div className={styles.itemInfo}>
-                    <span className={styles.itemName}>
-                      {t.shop.skins[s.id as keyof typeof t.shop.skins] ?? s.id}
-                    </span>
-                    <span className={styles.caseOnlyBadge}>{t.shop.caseOnly}</span>
-                  </div>
-                  <div className={styles.itemAction}>
-                    {equipped ? (
-                      <span className={styles.equippedBadge}>{t.shop.equipped}</span>
-                    ) : (
-                      <button className="btn-ghost" onClick={() => handleEquip(s.id)}>{t.shop.owned}</button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </>
-        )}
       </div>
     </div>
   )

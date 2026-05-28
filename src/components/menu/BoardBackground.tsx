@@ -68,39 +68,42 @@ export function BoardBackground() {
     <div className={styles.root} aria-hidden>
       <div className={styles.board} ref={boardRef}>
         {Array.from({ length: COLS }, (_, colIdx) => {
-          const colChips = columns[colIdx]   // bottom-up stack
-          const holes    = ROWS - colChips.length
+          const colChips = columns[colIdx]            // bottom-up stack
+          const filledFrom = ROWS - colChips.length   // rows >= this index are filled
 
           return (
             <div key={colIdx} className={styles.column}>
-              {/* Empty holes at top */}
-              {Array.from({ length: holes }, (_, i) => (
-                <div key={`h-${i}`} className={styles.hole} />
-              ))}
-              {/* Chips: rendered top-down (newest = visually highest) */}
-              <AnimatePresence>
-                {[...colChips].reverse().map((chip, stackIdx) => {
-                  // stackIdx 0 = topmost chip in column
-                  // rowFromTop = holes + stackIdx
-                  const rowFromTop = holes + stackIdx
-                  const fallPx = cellH > 0 ? -(rowFromTop + 1) * cellH : -999
-                  return (
-                    <motion.div
-                      key={chip.id}
-                      className={styles.chip}
-                      style={{ background: chip.color }}
-                      initial={{ y: fallPx }}
-                      animate={{ y: 0 }}
-                      exit={{ y: cellH > 0 ? (ROWS - rowFromTop + 1) * cellH : 500, opacity: 0 }}
-                      transition={
-                        clearing
-                          ? { duration: 0.45, ease: 'easeIn' }
-                          : { type: 'spring', stiffness: 200, damping: 20, mass: 0.85 }
-                      }
-                    />
-                  )
-                })}
-              </AnimatePresence>
+              {/* Fixed grid of cells — holes ALWAYS rendered, chips overlay them */}
+              {Array.from({ length: ROWS }, (_, row) => {
+                // row 0 = top. A chip occupies this row when row >= filledFrom.
+                const hasChip = row >= filledFrom
+                const chip    = hasChip ? colChips[ROWS - 1 - row] : null
+                // Fall distance: start above the board top, spring into the slot
+                const fallPx  = cellH > 0 ? -(row + 1) * cellH - cellH : -999
+
+                return (
+                  <div key={row} className={styles.cell}>
+                    <div className={styles.hole} />
+                    <AnimatePresence>
+                      {chip && (
+                        <motion.div
+                          key={chip.id}
+                          className={styles.chip}
+                          style={{ background: chip.color }}
+                          initial={{ y: fallPx }}
+                          animate={{ y: 0 }}
+                          exit={{ y: cellH > 0 ? (ROWS - row + 1) * cellH : 500, opacity: 0 }}
+                          transition={
+                            clearing
+                              ? { duration: 0.45, ease: 'easeIn' }
+                              : { type: 'spring', stiffness: 200, damping: 20, mass: 0.85 }
+                          }
+                        />
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )
+              })}
             </div>
           )
         })}

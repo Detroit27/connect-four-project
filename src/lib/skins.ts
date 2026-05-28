@@ -21,17 +21,17 @@ export const SKINS: Skin[] = [
   { id: 'gold',     nameKey: 'gold',     price: 3500, p1Color: '#F59E0B', p1Shadow: 'rgba(245,158,11,0.38)' },
 ]
 
-/** ── Case-exclusive skins (obtained via case opening only) ─────────────── */
+/** ── Character skins (buyable directly OR obtained via case opening) ────── */
 export const CASE_SKINS: Skin[] = [
-  { id: 'cappucino', nameKey: 'cappucino', price: -1, p1Color: '#6F4E37', p1Shadow: 'rgba(111,78,55,0.40)',  image: '/skins/cappucino.jpg' },
-  { id: 'chimp',     nameKey: 'chimp',     price: -1, p1Color: '#F9A825', p1Shadow: 'rgba(249,168,37,0.40)', image: '/skins/chimp.jpg' },
-  { id: 'ballerina', nameKey: 'ballerina', price: -1, p1Color: '#E91E8C', p1Shadow: 'rgba(233,30,140,0.40)', image: '/skins/ballerina.jpg' },
-  { id: 'patapim',   nameKey: 'patapim',   price: -1, p1Color: '#00BCD4', p1Shadow: 'rgba(0,188,212,0.40)',  glowColor: 'rgba(0,188,212,0.55)',  image: '/skins/patapim.jpg' },
-  { id: 'tralala',   nameKey: 'tralala',   price: -1, p1Color: '#2196F3', p1Shadow: 'rgba(33,150,243,0.40)', glowColor: 'rgba(33,150,243,0.55)', image: '/skins/tralala.jpg' },
-  { id: 'lirili',    nameKey: 'lirili',    price: -1, p1Color: '#4CAF50', p1Shadow: 'rgba(76,175,80,0.40)',  glowColor: 'rgba(76,175,80,0.50)',  image: '/skins/lirili.jpg' },
-  { id: 'bomba',     nameKey: 'bomba',     price: -1, p1Color: '#FF5722', p1Shadow: 'rgba(255,87,34,0.40)',  glowColor: 'rgba(255,87,34,0.55)',  image: '/skins/bomba.jpg' },
-  { id: 'trippi',    nameKey: 'trippi',    price: -1, p1Color: '#9C27B0', p1Shadow: 'rgba(156,39,176,0.45)', glowColor: 'rgba(156,39,176,0.55)', image: '/skins/trippi.jpg' },
-  { id: 'sahur',     nameKey: 'sahur',     price: -1, p1Color: '#FF8F00', p1Shadow: 'rgba(255,143,0,0.40)',  glowColor: 'rgba(255,143,0,0.60)',  image: '/skins/sahur.jpg' },
+  { id: 'cappucino', nameKey: 'cappucino', price: 500, p1Color: '#6F4E37', p1Shadow: 'rgba(111,78,55,0.40)',  image: '/skins/cappucino.jpg' },
+  { id: 'chimp',     nameKey: 'chimp',     price: 500, p1Color: '#F9A825', p1Shadow: 'rgba(249,168,37,0.40)', image: '/skins/chimp.jpg' },
+  { id: 'ballerina', nameKey: 'ballerina', price: 500, p1Color: '#E91E8C', p1Shadow: 'rgba(233,30,140,0.40)', image: '/skins/ballerina.jpg' },
+  { id: 'patapim',   nameKey: 'patapim',   price: 500, p1Color: '#00BCD4', p1Shadow: 'rgba(0,188,212,0.40)',  glowColor: 'rgba(0,188,212,0.55)',  image: '/skins/patapim.jpg' },
+  { id: 'tralala',   nameKey: 'tralala',   price: 500, p1Color: '#2196F3', p1Shadow: 'rgba(33,150,243,0.40)', glowColor: 'rgba(33,150,243,0.55)', image: '/skins/tralala.jpg' },
+  { id: 'lirili',    nameKey: 'lirili',    price: 500, p1Color: '#4CAF50', p1Shadow: 'rgba(76,175,80,0.40)',  glowColor: 'rgba(76,175,80,0.50)',  image: '/skins/lirili.jpg' },
+  { id: 'bomba',     nameKey: 'bomba',     price: 500, p1Color: '#FF5722', p1Shadow: 'rgba(255,87,34,0.40)',  glowColor: 'rgba(255,87,34,0.55)',  image: '/skins/bomba.jpg' },
+  { id: 'trippi',    nameKey: 'trippi',    price: 500, p1Color: '#9C27B0', p1Shadow: 'rgba(156,39,176,0.45)', glowColor: 'rgba(156,39,176,0.55)', image: '/skins/trippi.jpg' },
+  { id: 'sahur',     nameKey: 'sahur',     price: 500, p1Color: '#FF8F00', p1Shadow: 'rgba(255,143,0,0.40)',  glowColor: 'rgba(255,143,0,0.60)',  image: '/skins/sahur.jpg' },
 ]
 
 /** All skins combined — used for lookup */

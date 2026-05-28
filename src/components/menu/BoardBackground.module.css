@@ -17,26 +17,32 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;  /* chips stack from bottom up */
   overflow: hidden;
   padding: 4px;
   gap: 4px;
 }
 
+/* Each cell holds a hole; chips overlay on top and fall in */
+.cell {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .hole {
   width: 78%;
   aspect-ratio: 1;
-  flex-shrink: 0;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .chip {
+  position: absolute;
   width: 78%;
   aspect-ratio: 1;
-  flex-shrink: 0;
   border-radius: 50%;
   opacity: 0.72;
   box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.20);

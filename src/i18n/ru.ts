@@ -45,7 +45,7 @@ export const ru: Translations = {
   },
   shop: {
     title: 'Магазин', balance: 'Баланс', yourSkin: 'Ваши фишки',
-    buy: 'Купить', equipped: 'Надет', owned: 'Надеть', coins: 'монет',
+    buy: 'Купить', equipped: 'Надет', owned: 'Надеть', ownedLabel: 'В наличии', coins: 'монет',
     casesTitle: 'Кейсы', openCase: 'Открыть', caseOnly: 'Только из кейса',
     opening: 'Открываем…',
     claim: 'Забрать!',

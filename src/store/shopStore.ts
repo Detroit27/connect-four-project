@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { SKINS, getSkin, applySkinVars } from '../lib/skins'
+import { ALL_SKINS, getSkin, applySkinVars } from '../lib/skins'
 import { CASES, rollCase } from '../lib/cases'
 import type { Rarity } from '../lib/cases'
 
@@ -35,8 +35,8 @@ export const useShopStore = create<ShopState>()(
       setCurrency: (amount) => set({ currency: amount }),
 
       buySkin: (skinId) => {
-        const skin = SKINS.find(s => s.id === skinId)
-        if (!skin) return false
+        const skin = ALL_SKINS.find(s => s.id === skinId)
+        if (!skin || skin.price < 0) return false
         const { currency, inventory } = get()
         if (inventory.includes(skinId)) return true
         if (currency < skin.price) return false

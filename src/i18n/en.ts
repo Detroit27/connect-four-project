@@ -43,7 +43,7 @@ export const en = {
   },
   shop: {
     title: 'Shop', balance: 'Balance', yourSkin: 'Your chips',
-    buy: 'Buy', equipped: 'Equipped', owned: 'Equip', coins: 'coins',
+    buy: 'Buy', equipped: 'Equipped', owned: 'Equip', ownedLabel: 'Owned', coins: 'coins',
     casesTitle: 'Cases', openCase: 'Open', caseOnly: 'Case only',
     opening: 'Opening…',
     claim: 'Claim!',
