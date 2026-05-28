@@ -1,0 +1,110 @@
+.overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+
+.modal {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px 36px;
+  width: 100%; max-width: 520px;
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ── Reel ── */
+.reelContainer {
+  position: relative;
+  width: 440px; max-width: 100%;
+  height: 100px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+}
+
+/* Center hair-line indicator */
+.reelIndicator {
+  position: absolute; top: 0; bottom: 0;
+  left: 50%; width: 2px;
+  background: var(--accent);
+  opacity: 0.7; z-index: 2;
+  transform: translateX(-50%);
+}
+/* Fade edges */
+.reelContainer::before,
+.reelContainer::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 72px; z-index: 2;
+}
+.reelContainer::before { left:  0; background: linear-gradient(to right, var(--bg), transparent); }
+.reelContainer::after  { right: 0; background: linear-gradient(to left,  var(--bg), transparent); }
+
+.reel {
+  display: flex; align-items: center;
+  height: 100%;
+  will-change: transform;
+}
+
+.reelSlot {
+  width: 84px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.reelChip {
+  width: 56px; height: 56px; border-radius: 50%;
+  transition: box-shadow 0.3s;
+}
+
+.winnerSlot .reelChip {
+  width: 64px; height: 64px;
+}
+
+/* ── Reveal section ── */
+.reveal {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  width: 100%;
+}
+
+.rarityBadge {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+  color: #fff; padding: 4px 14px;
+  border-radius: var(--radius-full);
+}
+
+.revealChip {
+  width: 96px; height: 96px; border-radius: 50%;
+}
+
+.revealName {
+  font-size: 20px; font-weight: 600;
+  font-family: var(--font-serif);
+  color: var(--text); letter-spacing: -0.01em;
+}
+
+.duplicate {
+  font-size: 13px; color: #F59E0B;
+}
+
+.openingLabel {
+  font-size: 14px; color: var(--text-muted);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@media (max-width: 480px) {
+  .reelContainer { width: 100%; }
+  .modal { padding: 24px 16px 28px; }
+}

@@ -4,7 +4,7 @@ import { useShopStore } from '../../store/shopStore'
 import { useAuthStore } from '../../store/authStore'
 import { dropChip, checkWin, isBoardFull } from '../../lib/gameLogic'
 import { getAIMove } from '../../lib/ai'
-import { playClick } from '../../lib/sound'
+import { playClick, playWin, playLoss } from '../../lib/sound'
 import { useT } from '../../i18n'
 import { Board } from './Board'
 import type { Difficulty, SpMatch } from '../../types'
@@ -47,6 +47,8 @@ export function GameView() {
   useEffect(() => {
     if (!winInfo && !isDraw) return
     const result = isDraw ? 'draw' : winInfo!.winner === 1 ? 'win' : 'loss'
+    if (result === 'win') playWin()
+    else if (result === 'loss') playLoss()
     const earned = result === 'win' ? coins.win : coins.loss
     addCurrency(earned)
     updateCurrencyOnServer(earned)

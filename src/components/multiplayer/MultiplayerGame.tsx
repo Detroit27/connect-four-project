@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import { motion, AnimatePresence } from 'framer-motion'
 import { dropChip, checkWin, isBoardFull } from '../../lib/gameLogic'
 import { pushMove as dbPushMove, subscribeToRoom, saveMpMatch, forfeitRoom } from '../../lib/multiplayer'
 import { supabase } from '../../lib/supabase'
-import { playClick } from '../../lib/sound'
+import { playClick, playWin, playLoss } from '../../lib/sound'
 import { useShopStore } from '../../store/shopStore'
 import { useAuthStore } from '../../store/authStore'
 import { useGameStore } from '../../store/gameStore'
 import { useT } from '../../i18n'
 import { Board } from '../game/Board'
+import { Confetti } from '../ui/Confetti'
 import type { Board as BoardType, Player, WinInfo, MpMatch } from '../../types'
 import styles from './MultiplayerGame.module.css'
 
@@ -21,7 +23,6 @@ interface Props {
   onExit: () => void
 }
 
-// MP rewards are higher than SP to incentivise online play
 const WIN_COINS  = 80
 const LOSS_COINS = 15
 
@@ -30,20 +31,21 @@ export function MultiplayerGame({
 }: Props) {
   const t = useT()
   const { addCurrency } = useShopStore()
-  const { user, updateCurrencyOnServer } = useAuthStore()
+  const { user, profile, updateCurrencyOnServer, loadProfile } = useAuthStore()
   const { setReplayMatch } = useGameStore()
 
-  const [board, setBoard]               = useState<BoardType>(initialBoard)
-  const [moves, setMoves]               = useState<number[]>(initialMoves)
-  const [currentPlayer, setCurrentPlayer] = useState<Player>(1)
-  const [winInfo, setWinInfo]           = useState<WinInfo | null>(null)
-  const [isDraw, setIsDraw]             = useState(false)
-  const [forfeitWinner, setForfeitWinner] = useState<Player | null>(null)
-  const [saved, setSaved]               = useState(false)
+  const [board, setBoard]                   = useState<BoardType>(initialBoard)
+  const [moves, setMoves]                   = useState<number[]>(initialMoves)
+  const [currentPlayer, setCurrentPlayer]   = useState<Player>(1)
+  const [winInfo, setWinInfo]               = useState<WinInfo | null>(null)
+  const [isDraw, setIsDraw]                 = useState(false)
+  const [forfeitWinner, setForfeitWinner]   = useState<Player | null>(null)
+  const [saved, setSaved]                   = useState(false)
   const channelRef = useRef<RealtimeChannel | null>(null)
 
-  const ended   = !!(winInfo || isDraw || forfeitWinner)
+  const ended    = !!(winInfo || isDraw || forfeitWinner)
   const isMyTurn = currentPlayer === myPlayer
+  const myUsername = profile?.username ?? user?.email ?? 'You'
 
   // --- Realtime subscription ---
   useEffect(() => {
@@ -67,7 +69,7 @@ export function MultiplayerGame({
     return () => { channelRef.current?.unsubscribe() }
   }, [roomCode])
 
-  // --- Save result & award coins ---
+  // --- Save result, award coins, update leaderboard ---
   useEffect(() => {
     if (!ended || saved || !user) return
     setSaved(true)
@@ -82,13 +84,25 @@ export function MultiplayerGame({
     addCurrency(coins)
     updateCurrencyOnServer(coins)
 
+    // Play sound
+    if (result === 'win') playWin()
+    else if (result === 'loss') playLoss()
+
+    // Update mp_wins counter and refresh profile
     if (result === 'win') {
-      supabase.from('profiles').select('mp_wins').eq('id', user.id).single()
-        .then(({ data }) => {
-          if (data) supabase.from('profiles')
-            .update({ mp_wins: (data.mp_wins ?? 0) + 1 }).eq('id', user.id)
-        })
+      ;(async () => {
+        try {
+          const { data } = await supabase
+            .from('profiles').select('mp_wins').eq('id', user.id).single()
+          if (data) {
+            await supabase.from('profiles')
+              .update({ mp_wins: (data.mp_wins ?? 0) + 1 }).eq('id', user.id)
+            await loadProfile(user.id)
+          }
+        } catch (e) { console.error('[MP] mp_wins update failed:', e) }
+      })()
     }
+
     saveMpMatch(user.id, null, roomCode, opponentUsername, result, moves)
       .catch(e => console.error('[MP] saveMpMatch failed:', e))
   }, [ended, saved]) // eslint-disable-line
@@ -99,7 +113,7 @@ export function MultiplayerGame({
     const next = dropChip(board, col, currentPlayer)
     if (!next) return
     playClick()
-    const newMoves  = [...moves, col]
+    const newMoves    = [...moves, col]
     const nextPlayer: Player = currentPlayer === 1 ? 2 : 1
     const win  = checkWin(next)
     const draw = !win && isBoardFull(next)
@@ -119,35 +133,50 @@ export function MultiplayerGame({
   const handleForfeit = async () => {
     if (!window.confirm(t.multiplayer.forfeitConfirm)) return
     const winner: Player = myPlayer === 1 ? 2 : 1
-    setForfeitWinner(winner)   // я проиграл
+    setForfeitWinner(winner)
     try { await forfeitRoom(roomCode, myPlayer) } catch (err) { console.error(err) }
   }
 
-  // --- Status text ---
-  const statusText = () => {
-    if (forfeitWinner) return forfeitWinner === myPlayer ? t.multiplayer.opponentForfeit : t.multiplayer.youForfeit
-    if (winInfo) return winInfo.winner === myPlayer ? t.multiplayer.youWin : t.multiplayer.opponentWins
-    if (isDraw)  return t.multiplayer.draw
-    return isMyTurn ? t.multiplayer.yourTurn : t.multiplayer.opponentTurn
-  }
+  // --- Derived result ---
+  const myResult: 'win' | 'loss' | 'draw' | null = !ended ? null
+    : isDraw                          ? 'draw'
+    : (winInfo?.winner === myPlayer || forfeitWinner === myPlayer) ? 'win'
+    : 'loss'
 
   const openReplay = () => {
     const match: MpMatch = {
       id: roomCode, roomCode, opponentUsername,
-      result: isDraw ? 'draw' : (winInfo?.winner === myPlayer || forfeitWinner === myPlayer) ? 'win' : 'loss',
+      result: myResult ?? 'draw',
       moves, playedAt: new Date().toISOString(),
     }
     setReplayMatch(match)
   }
 
+  // --- Thinking indicator: dots when it's opponent's turn ---
+  const showThinking = !ended && !isMyTurn
+
   return (
     <div className={styles.container}>
+      {/* Confetti on win */}
+      {myResult === 'win' && <Confetti />}
+
+      {/* ── Header ── */}
       <div className={styles.header}>
         <button className="btn-ghost" onClick={onExit}>{t.common.back}</button>
-        <div className={styles.status}>
-          <span className={`${styles.dot} ${isMyTurn && !ended ? styles.p1 : styles.p2}`} />
-          {statusText()}
+
+        {/* Player vs Player */}
+        <div className={styles.versus}>
+          <div className={`${styles.playerLabel} ${myPlayer === 1 ? styles.activePlayer : ''}`}>
+            <span className={`${styles.dot} ${styles.p1}`} />
+            <span className={styles.playerName}>{myUsername}</span>
+          </div>
+          <span className={styles.vsText}>vs</span>
+          <div className={`${styles.playerLabel} ${myPlayer === 2 ? styles.activePlayer : ''}`}>
+            <span className={`${styles.dot} ${styles.p2}`} />
+            <span className={styles.playerName}>{opponentUsername}</span>
+          </div>
         </div>
+
         <div className={styles.headerRight}>
           <span className={styles.code}>{roomCode}</span>
           {!ended && (
@@ -158,6 +187,18 @@ export function MultiplayerGame({
         </div>
       </div>
 
+      {/* ── Turn / thinking indicator ── */}
+      <div className={styles.turnBar}>
+        {ended ? null : isMyTurn ? (
+          <span className={styles.yourTurnLabel}>{t.multiplayer.yourTurn}</span>
+        ) : (
+          <span className={styles.thinkingLabel}>
+            {opponentUsername} {t.multiplayer.opponentThinking}
+            <span className={styles.dots}><span /><span /><span /></span>
+          </span>
+        )}
+      </div>
+
       <Board
         onColumnClick={handleColumnClick}
         winInfo={winInfo}
@@ -165,12 +206,40 @@ export function MultiplayerGame({
         disableClick={!isMyTurn || ended}
       />
 
-      {ended && (
-        <div className={styles.actions}>
-          <button className="btn-ghost" onClick={openReplay}>{t.multiplayer.viewReplay}</button>
-          <button className="btn-primary" onClick={onExit}>{t.multiplayer.mainMenu}</button>
-        </div>
-      )}
+      {/* ── Game-over overlay ── */}
+      <AnimatePresence>
+        {ended && (
+          <motion.div
+            className={styles.resultOverlay}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.4 }}
+          >
+            <p className={`${styles.resultText} ${myResult === 'win' ? styles.win : myResult === 'loss' ? styles.loss : styles.draw}`}>
+              {forfeitWinner
+                ? (forfeitWinner === myPlayer ? t.multiplayer.opponentForfeit : t.multiplayer.youForfeit)
+                : myResult === 'win' ? t.multiplayer.youWin
+                : myResult === 'loss' ? t.multiplayer.opponentWins
+                : t.multiplayer.draw}
+            </p>
+
+            {myResult !== 'draw' && (
+              <p className={styles.coinsEarned}>
+                +{myResult === 'win' ? WIN_COINS : LOSS_COINS} {t.game.earned}
+              </p>
+            )}
+
+            <div className={styles.actions}>
+              <button className="btn-ghost" onClick={openReplay}>
+                {t.multiplayer.viewReplay}
+              </button>
+              <button className="btn-primary" onClick={onExit}>
+                {t.multiplayer.mainMenu}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -1,0 +1,35 @@
+@keyframes chip-fall {
+  0% {
+    transform: translateY(-48px) rotate(var(--rotate-start, 0deg));
+    opacity: 0;
+  }
+  8% { opacity: 1; }
+  88% { opacity: 0.9; }
+  100% {
+    transform: translateY(110vh) rotate(calc(var(--rotate-start, 0deg) + 540deg));
+    opacity: 0;
+  }
+}
+
+.root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.chip {
+  position: absolute;
+  top: -48px;
+  border-radius: 50%;
+  animation: chip-fall linear infinite;
+  opacity: 0;
+}
+
+.red  { background: rgba(230, 57,  70,  0.18); box-shadow: 0 0 6px rgba(230,57,70,0.10); }
+.blue { background: rgba(79,  86,  227, 0.18); box-shadow: 0 0 6px rgba(79,86,227,0.10); }
+
+@media (prefers-reduced-motion: reduce) {
+  .chip { animation: none; display: none; }
+}

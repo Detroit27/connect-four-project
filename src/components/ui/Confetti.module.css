@@ -1,0 +1,23 @@
+@keyframes fall {
+  0%   { transform: translateY(-10px) translateX(0) skewX(var(--skew, 0deg)) rotate(0deg); opacity: 1; }
+  80%  { opacity: 1; }
+  100% {
+    transform: translateY(105vh) translateX(var(--drift, 0px)) skewX(var(--skew, 0deg)) rotate(540deg);
+    opacity: 0;
+  }
+}
+
+.root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 200;
+}
+
+.piece {
+  position: absolute;
+  top: -12px;
+  border-radius: 2px;
+  animation: fall linear forwards;
+}

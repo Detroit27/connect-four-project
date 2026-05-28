@@ -3,6 +3,7 @@ import { useGameStore } from '../../store/gameStore'
 import { useAuthStore } from '../../store/authStore'
 import { useT } from '../../i18n'
 import { MenuTile } from './MenuTile'
+import { FallingChips } from './FallingChips'
 import { startBgMusic, stopBgMusic } from '../../lib/sound'
 import type { Screen } from '../../types'
 import styles from './MainMenu.module.css'
@@ -23,7 +24,6 @@ export function MainMenu({ onAuthClick }: Props) {
   const { user, profile, signOut } = useAuthStore()
   const t = useT()
 
-  // Optional background music — plays if /public/music.mp3 exists
   useEffect(() => {
     startBgMusic()
     return () => stopBgMusic()
@@ -31,6 +31,9 @@ export function MainMenu({ onAuthClick }: Props) {
 
   return (
     <div className={styles.root}>
+      {/* Animated falling-chips background */}
+      <FallingChips />
+
       <header className={styles.header}>
         <span className={styles.logo}>Four</span>
         <div className={styles.authArea}>

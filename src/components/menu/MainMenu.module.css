@@ -3,6 +3,8 @@
   flex-direction: column;
   min-height: 100%;
   padding: 28px clamp(16px, 5vw, 48px);
+  position: relative;
+  overflow: hidden;
 }
 
 .header {
@@ -10,6 +12,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: clamp(32px, 6vh, 64px);
+  position: relative; z-index: 1;
 }
 
 .logo {
@@ -44,4 +47,5 @@
   max-width: 640px;
   width: 100%;
   margin: 0 auto;
+  position: relative; z-index: 1;
 }

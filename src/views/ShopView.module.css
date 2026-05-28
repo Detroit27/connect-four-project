@@ -36,7 +36,6 @@
   border: 1.5px solid var(--border);
 }
 
-/* Single big chip — only yours */
 .chipBig {
   width: 100px;
   height: 100px;
@@ -74,7 +73,7 @@
   color: var(--accent);
 }
 
-/* ── Skin list ─────────────────────────────────── */
+/* ── Right list column ─────────────────────────── */
 .list {
   flex: 1;
   display: flex;
@@ -83,6 +82,85 @@
   min-width: 0;
 }
 
+.sectionLabel {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+
+/* ── Cases row ─────────────────────────────────── */
+.casesRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.caseCard {
+  flex: 1 1 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  align-items: flex-start;
+}
+.caseCard:hover {
+  border-color: var(--case-color, var(--accent));
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.caseIcon {
+  display: flex;
+  align-items: center;
+}
+
+.caseChip {
+  border-radius: 50%;
+  position: relative;
+  display: inline-block;
+}
+
+.caseInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.caseName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.caseRarities {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.rarityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.casePrice {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Skin list ─────────────────────────────────── */
 .item {
   display: flex;
   align-items: center;
@@ -96,7 +174,6 @@
 
 .item.equipped { border-color: var(--accent); }
 
-/* Single chip per row */
 .smallChip {
   width: 40px;
   height: 40px;
@@ -121,6 +198,12 @@
 .price {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.caseOnlyBadge {
+  font-size: 11px;
+  color: #9333EA;
+  font-weight: 500;
 }
 
 .itemAction { flex-shrink: 0; }
@@ -163,4 +246,8 @@
   .skinName { text-align: left; }
 
   .balance { flex: 1; }
+
+  .casesRow { gap: 8px; }
+
+  .caseCard { flex: 1 1 100%; }
 }

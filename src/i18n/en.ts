@@ -19,7 +19,7 @@ export const en = {
   },
   game: {
     yourTurn: 'Your turn', aiTurn: "AI's turn", aiThinking: 'AI is thinking…',
-    youWin: 'You win', aiWins: 'AI wins', draw: 'Draw',
+    youWin: 'You win!', aiWins: 'AI wins', draw: 'Draw',
     playAgain: 'Play again', mainMenu: 'Main menu', restart: 'Restart', earned: 'coins earned',
   },
   multiplayer: {
@@ -28,6 +28,7 @@ export const en = {
     shareCode: 'Share this code with your friend',
     waitingForOpponent: 'Waiting for opponent…', opponentJoined: 'Opponent joined!',
     yourTurn: 'Your turn', opponentTurn: "Opponent's turn",
+    opponentThinking: 'thinking…',
     youWin: 'You win!', opponentWins: 'Opponent wins', draw: 'Draw',
     leaderboard: 'Leaderboard', wins: 'Wins', rank: '#', player: 'Player',
     signInRequired: 'You must sign in to play multiplayer.',
@@ -35,12 +36,25 @@ export const en = {
     playAgain: 'Play again', mainMenu: 'Main menu',
     forfeit: 'Forfeit', forfeitConfirm: 'Surrender the match?',
     opponentForfeit: 'Opponent surrendered', youForfeit: 'You surrendered',
-    activeMatch: 'You have an active match', resume: 'Resume', activeCode: 'Room',
+    activeMatch: 'Active match', waitingMatch: 'Waiting for player',
+    resume: 'Resume', activeCode: 'Room',
+    cancelWait: 'Cancel',
   },
   shop: {
     title: 'Shop', balance: 'Balance', yourSkin: 'Your chips',
     buy: 'Buy', equipped: 'Equipped', owned: 'Equip', coins: 'coins',
-    skins: { classic: 'Classic', slate: 'Slate', forest: 'Forest', dusk: 'Dusk', obsidian: 'Obsidian', gold: 'Gold' },
+    casesTitle: 'Cases', openCase: 'Open', caseOnly: 'Case only',
+    opening: 'Opening…',
+    claim: 'Claim!',
+    duplicate: 'Already owned — you got a 50% coin refund!',
+    skins: {
+      classic: 'Classic', slate: 'Slate', forest: 'Forest', dusk: 'Dusk', obsidian: 'Obsidian', gold: 'Gold',
+      neon: 'Neon', lava: 'Lava', aurora: 'Aurora', void: 'Void', chrome: 'Chrome',
+    },
+    cases: {
+      starter: 'Starter Case', neon: 'Neon Case', gold: 'Gold Case',
+      starterCase: 'Starter Case', neonCase: 'Neon Case', goldCase: 'Gold Case',
+    },
   },
   config: {
     title: 'Config', appearance: 'Appearance', theme: 'Theme', light: 'Light', dark: 'Dark',

@@ -21,7 +21,7 @@ export const ru: Translations = {
   },
   game: {
     yourTurn: 'Ваш ход', aiTurn: 'Ход ИИ', aiThinking: 'ИИ думает…',
-    youWin: 'Вы победили', aiWins: 'ИИ победил', draw: 'Ничья',
+    youWin: 'Вы победили!', aiWins: 'ИИ победил', draw: 'Ничья',
     playAgain: 'Играть снова', mainMenu: 'Главное меню', restart: 'Рестарт', earned: 'монет получено',
   },
   multiplayer: {
@@ -30,6 +30,7 @@ export const ru: Translations = {
     shareCode: 'Поделитесь этим кодом с другом',
     waitingForOpponent: 'Ожидание соперника…', opponentJoined: 'Соперник подключился!',
     yourTurn: 'Ваш ход', opponentTurn: 'Ход соперника',
+    opponentThinking: 'думает…',
     youWin: 'Вы победили!', opponentWins: 'Соперник победил', draw: 'Ничья',
     leaderboard: 'Таблица лидеров', wins: 'Побед', rank: '№', player: 'Игрок',
     signInRequired: 'Для игры онлайн необходимо войти в аккаунт.',
@@ -37,12 +38,25 @@ export const ru: Translations = {
     playAgain: 'Играть снова', mainMenu: 'Главное меню',
     forfeit: 'Сдаться', forfeitConfirm: 'Сдать матч?',
     opponentForfeit: 'Соперник сдался', youForfeit: 'Вы сдались',
-    activeMatch: 'У вас есть активный матч', resume: 'Продолжить', activeCode: 'Комната',
+    activeMatch: 'Активный матч', waitingMatch: 'Ожидание игрока',
+    resume: 'Продолжить', activeCode: 'Комната',
+    cancelWait: 'Отменить',
   },
   shop: {
     title: 'Магазин', balance: 'Баланс', yourSkin: 'Ваши фишки',
     buy: 'Купить', equipped: 'Надет', owned: 'Надеть', coins: 'монет',
-    skins: { classic: 'Классика', slate: 'Сланец', forest: 'Лес', dusk: 'Закат', obsidian: 'Обсидиан', gold: 'Золото' },
+    casesTitle: 'Кейсы', openCase: 'Открыть', caseOnly: 'Только из кейса',
+    opening: 'Открываем…',
+    claim: 'Забрать!',
+    duplicate: 'Уже есть — вы получили 50% монет обратно!',
+    skins: {
+      classic: 'Классика', slate: 'Сланец', forest: 'Лес', dusk: 'Закат', obsidian: 'Обсидиан', gold: 'Золото',
+      neon: 'Неон', lava: 'Лава', aurora: 'Аврора', void: 'Пустота', chrome: 'Хром',
+    },
+    cases: {
+      starter: 'Стартовый кейс', neon: 'Неоновый кейс', gold: 'Золотой кейс',
+      starterCase: 'Стартовый кейс', neonCase: 'Неоновый кейс', goldCase: 'Золотой кейс',
+    },
   },
   config: {
     title: 'Настройки', appearance: 'Внешний вид', theme: 'Тема', light: 'Светлая', dark: 'Тёмная',
