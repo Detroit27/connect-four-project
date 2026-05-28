@@ -97,8 +97,9 @@ export function subscribeToRoom(
   code: string,
   onUpdate: (room: Record<string, unknown>) => void,
 ) {
+  const channelId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
   return supabase
-    .channel(`room-${code}`)
+    .channel(`room-${code}-${channelId}`)
     .on(
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'mp_rooms', filter: `code=eq.${code}` },

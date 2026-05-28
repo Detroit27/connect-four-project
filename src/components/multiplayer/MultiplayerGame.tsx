@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import type { RealtimeChannel } from '@supabase/supabase-js'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dropChip, checkWin, isBoardFull, getWinningMove } from '../../lib/gameLogic'
 import { pushMove as dbPushMove, subscribeToRoom, saveMpMatch, forfeitRoom, getRoomByCode } from '../../lib/multiplayer'
@@ -18,6 +17,7 @@ interface Props {
   roomCode: string
   initialBoard: BoardType
   initialMoves: number[]
+  initialCurrentPlayer: Player
   myPlayer: Player
   opponentUsername: string
   onExit: () => void
@@ -28,7 +28,7 @@ const LOSS_COINS = 15
 const POLL_MS    = 900   // fallback poll when Realtime subscription misses updates
 
 export function MultiplayerGame({
-  roomCode, initialBoard, initialMoves, myPlayer, opponentUsername, onExit,
+  roomCode, initialBoard, initialMoves, initialCurrentPlayer, myPlayer, opponentUsername, onExit,
 }: Props) {
   const t = useT()
   const { addCurrency } = useShopStore()
@@ -37,12 +37,13 @@ export function MultiplayerGame({
 
   const [board, setBoard]                 = useState<BoardType>(initialBoard)
   const [moves, setMoves]                 = useState<number[]>(initialMoves)
-  const [currentPlayer, setCurrentPlayer] = useState<Player>(1)
+  const [currentPlayer, setCurrentPlayer] = useState<Player>(initialCurrentPlayer)
   const [winInfo, setWinInfo]             = useState<WinInfo | null>(null)
   const [isDraw, setIsDraw]               = useState(false)
   const [forfeitWinner, setForfeitWinner] = useState<Player | null>(null)
   const [saved, setSaved]                 = useState(false)
-  const channelRef = useRef<RealtimeChannel | null>(null)
+  const boardRef = useRef<BoardType>(initialBoard)
+  const movesRef = useRef<number[]>(initialMoves)
 
   const ended    = !!(winInfo || isDraw || forfeitWinner)
   const isMyTurn = currentPlayer === myPlayer
@@ -58,12 +59,16 @@ export function MultiplayerGame({
     try { return JSON.parse(value) as T } catch { return fallback }
   }
 
-  /** Apply a room snapshot — used by both Realtime and polling */
+  /** Apply a room snapshot - used by both Realtime and polling */
   const applyRoom = useCallback((room: Record<string, unknown>) => {
-    const b = parseJsonField<BoardType>(room.board, board)
-    const m = parseJsonField<number[]>(room.moves, moves)
+    const b = parseJsonField<BoardType>(room.board, boardRef.current)
+    const m = parseJsonField<number[]>(room.moves, movesRef.current)
     const cp = Number(room.current_player) === 2 ? 2 : 1
 
+    if (room.status !== 'finished' && m.length < movesRef.current.length) return
+
+    boardRef.current = b
+    movesRef.current = m
     setBoard(b); setMoves(m); setCurrentPlayer(cp)
 
     if (room.status === 'finished') {
@@ -76,12 +81,12 @@ export function MultiplayerGame({
       if (win) setWinInfo(win)
       else if (isBoardFull(b)) setIsDraw(true)
     }
-  }, [board, moves])
+  }, [])
 
   // --- Realtime subscription ---
   useEffect(() => {
-    channelRef.current = subscribeToRoom(roomCode, applyRoom)
-    return () => { channelRef.current?.unsubscribe() }
+    const channel = subscribeToRoom(roomCode, applyRoom)
+    return () => { channel.unsubscribe() }
   }, [roomCode, applyRoom])
 
   // --- Polling fallback (in case Realtime isn't enabled in Supabase dashboard) ---
@@ -135,7 +140,7 @@ export function MultiplayerGame({
       })()
     }
 
-    saveMpMatch(user.id, null, roomCode, opponentUsername, result, moves)
+    saveMpMatch(user.id, null, roomCode, opponentUsername, result, movesRef.current)
       .catch(e => console.error('[MP] saveMpMatch failed:', e))
   }, [ended, saved]) // eslint-disable-line
 
@@ -149,6 +154,8 @@ export function MultiplayerGame({
     const nextPlayer: Player = currentPlayer === 1 ? 2 : 1
     const win  = checkWin(next)
     const draw = !win && isBoardFull(next)
+    boardRef.current = next
+    movesRef.current = newMoves
     setBoard(next); setMoves(newMoves); setCurrentPlayer(nextPlayer)
     if (win)  setWinInfo(win)
     if (draw) setIsDraw(true)
@@ -181,7 +188,7 @@ export function MultiplayerGame({
     const match: MpMatch = {
       id: roomCode, roomCode, opponentUsername,
       result: myResult ?? 'draw',
-      moves, playedAt: new Date().toISOString(),
+      moves: movesRef.current, playedAt: new Date().toISOString(),
     }
     setReplayMatch(match)
   }
@@ -190,7 +197,7 @@ export function MultiplayerGame({
     <div className={styles.container}>
       {myResult === 'win' && <Confetti />}
 
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <div className={styles.header}>
         <button className="btn-ghost" onClick={onExit}>{t.common.back}</button>
 
@@ -216,7 +223,7 @@ export function MultiplayerGame({
         </div>
       </div>
 
-      {/* ── Turn / thinking indicator ── */}
+      {/* -- Turn / thinking indicator -- */}
       <div className={styles.turnBar}>
         {ended ? null : isMyTurn ? (
           <span className={styles.yourTurnLabel}>{t.multiplayer.yourTurn}</span>
@@ -236,7 +243,7 @@ export function MultiplayerGame({
         blinkCol={blinkCol}
       />
 
-      {/* ── Game-over overlay ── */}
+      {/* -- Game-over overlay -- */}
       <AnimatePresence>
         {ended && (
           <motion.div

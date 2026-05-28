@@ -39,38 +39,45 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     })
   }, [user])
 
-  // ── Detect the opponent joining while the host is on the waiting screen ──
-  // Belt-and-suspenders: Realtime subscription (instant, if enabled on the table)
-  // AND a REST poll fallback (works even if Realtime is off). Either one fires.
+  const waitingCode = mpScreen === 'waiting'
+    ? (room?.code ?? activeRoom?.code ?? null)
+    : null
+
+  // Detect the opponent joining while the host is on the waiting screen.
+  // Realtime is instant when Supabase delivers it; polling is the reliable fallback.
   useEffect(() => {
-    if (mpScreen !== 'waiting' || !room) return
-    const code = room.code
-    let entered = false
+    if (!waitingCode || !user) return
+    let stopped = false
 
     const enterGame = (data: any) => {
-      if (entered || !data?.guest_id) return
-      entered = true
-      console.log('[MP] opponent joined, starting match', code)
+      if (stopped || !data?.guest_id || data.status !== 'playing') return
+      console.log('[MP] opponent joined, starting match', waitingCode)
+      setMyPlayer(data.host_id === user.id ? 1 : 2)
       setRoom(data as Room)
       setActiveRoom(null)
+      setError('')
       setMpScreen('game')
     }
 
-    // 1) Realtime push
-    const channel = subscribeToRoom(code, (r) => enterGame(r))
-
-    // 2) Polling fallback every 1.5s
-    const poll = setInterval(async () => {
+    const sync = async () => {
       try {
         const { data, error } = await supabase
-          .from('mp_rooms').select().eq('code', code).maybeSingle()
+          .from('mp_rooms').select().eq('code', waitingCode).maybeSingle()
         if (error) { console.error('[MP] waiting poll error:', error); return }
         enterGame(data)
       } catch (e) { console.error('[MP] waiting poll threw:', e) }
-    }, 1500)
+    }
 
-    return () => { channel.unsubscribe(); clearInterval(poll) }
-  }, [mpScreen, room?.code])   // re-runs when entering/leaving waiting state
+    const channel = subscribeToRoom(waitingCode, (r) => enterGame(r))
+    sync()
+    const poll = setInterval(sync, 750)
+
+    return () => {
+      stopped = true
+      channel.unsubscribe()
+      clearInterval(poll)
+    }
+  }, [waitingCode, user?.id])
 
   if (!user) {
     return (
@@ -87,6 +94,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
         roomCode={room.code}
         initialBoard={room.board}
         initialMoves={room.moves ?? []}
+        initialCurrentPlayer={room.current_player}
         myPlayer={myPlayer}
         opponentUsername={myPlayer === 1 ? (room.guest_username ?? '?') : room.host_username}
         onExit={() => {
@@ -175,7 +183,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
                 {isActiveWaiting
                   ? t.multiplayer.waitingMatch
                   : activeOpponent
-                    ? `${t.multiplayer.activeMatch} · vs ${activeOpponent}`
+                    ? `${t.multiplayer.activeMatch} vs ${activeOpponent}`
                     : t.multiplayer.activeMatch}
               </span>
               <span className={styles.activeBannerCode}>
