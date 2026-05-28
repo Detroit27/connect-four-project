@@ -25,7 +25,7 @@ interface Props {
 
 const WIN_COINS  = 80
 const LOSS_COINS = 15
-const POLL_MS    = 3000   // fallback poll when Realtime subscription misses updates
+const POLL_MS    = 900   // fallback poll when Realtime subscription misses updates
 
 export function MultiplayerGame({
   roomCode, initialBoard, initialMoves, myPlayer, opponentUsername, onExit,
@@ -43,10 +43,15 @@ export function MultiplayerGame({
   const [forfeitWinner, setForfeitWinner] = useState<Player | null>(null)
   const [saved, setSaved]                 = useState(false)
   const channelRef = useRef<RealtimeChannel | null>(null)
+  const movesRef = useRef<number[]>(initialMoves)
 
   const ended    = !!(winInfo || isDraw || forfeitWinner)
   const isMyTurn = currentPlayer === myPlayer
   const myUsername = profile?.username ?? user?.email ?? 'You'
+
+  useEffect(() => {
+    movesRef.current = moves
+  }, [moves])
 
   // Win-blink: column where I can win in one move
   const blinkCol = (!ended && isMyTurn)
@@ -58,6 +63,10 @@ export function MultiplayerGame({
     const b  = room.board as BoardType
     const m  = room.moves as number[]
     const cp = room.current_player as Player
+
+    // Do not let a slow poll overwrite a newer local move with an older DB snapshot.
+    if ((m?.length ?? 0) < movesRef.current.length) return
+
     setBoard(b); setMoves(m); setCurrentPlayer(cp)
 
     if (room.status === 'finished') {
@@ -81,11 +90,17 @@ export function MultiplayerGame({
   // --- Polling fallback (in case Realtime isn't enabled in Supabase dashboard) ---
   useEffect(() => {
     if (ended) return
-    const timer = setInterval(async () => {
+    const sync = async () => {
       try {
         const room = await getRoomByCode(roomCode)
         if (room) applyRoom(room as Record<string, unknown>)
-      } catch (e) { /* silent */ }
+      } catch (e) {
+        console.error('[MP] room poll failed:', e)
+      }
+    }
+    sync()
+    const timer = setInterval(async () => {
+      await sync()
     }, POLL_MS)
     return () => clearInterval(timer)
   }, [roomCode, ended, applyRoom])
@@ -146,6 +161,8 @@ export function MultiplayerGame({
         win || draw ? 'finished' : undefined,
         win ? win.winner : draw ? 0 : undefined,
       )
+      const latest = await getRoomByCode(roomCode)
+      if (latest) applyRoom(latest as Record<string, unknown>)
     } catch (err) { console.error(err) }
   }
 
