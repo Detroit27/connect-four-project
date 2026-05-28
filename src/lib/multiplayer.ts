@@ -22,19 +22,22 @@ export async function createRoom(hostId: string, hostUsername: string) {
     })
     .select()
     .single()
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return data
 }
 
 export async function joinRoom(code: string, guestId: string, guestUsername: string) {
+  // maybeSingle() не падает если строк 0 — просто возвращает null
   const { data: room, error: fetchErr } = await supabase
     .from('mp_rooms')
     .select()
     .eq('code', code.toUpperCase())
-    .single()
-  if (fetchErr || !room) throw new Error('Room not found')
-  if (room.status !== 'waiting') throw new Error('Room is not available')
-  if (room.host_id === guestId) throw new Error('Cannot join your own room')
+    .maybeSingle()
+
+  if (fetchErr) throw new Error(fetchErr.message)
+  if (!room) throw new Error('Room not found. Check the code and try again.')
+  if (room.status !== 'waiting') throw new Error('Room is already full or finished.')
+  if (room.host_id === guestId) throw new Error('You cannot join your own room.')
 
   const { data, error } = await supabase
     .from('mp_rooms')
@@ -42,34 +45,65 @@ export async function joinRoom(code: string, guestId: string, guestUsername: str
     .eq('code', code.toUpperCase())
     .select()
     .single()
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return data
 }
 
-export async function pushMove(code: string, board: Board, moves: number[], nextPlayer: Player, status?: string, winner?: number | null) {
+export async function getRoomByCode(code: string) {
+  const { data, error } = await supabase
+    .from('mp_rooms')
+    .select()
+    .eq('code', code.toUpperCase())
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function pushMove(
+  code: string,
+  board: Board,
+  moves: number[],
+  nextPlayer: Player,
+  status?: string,
+  winner?: number | null,
+) {
   const update: Record<string, unknown> = { board, moves, current_player: nextPlayer }
   if (status) update.status = status
   if (winner !== undefined) update.winner = winner
-
-  const { error } = await supabase
-    .from('mp_rooms')
-    .update(update)
-    .eq('code', code)
-  if (error) throw error
+  const { error } = await supabase.from('mp_rooms').update(update).eq('code', code)
+  if (error) throw new Error(error.message)
 }
 
-export async function saveMpMatch(playerId: string, opponentId: string, roomCode: string, opponentUsername: string, result: string, moves: number[]) {
-  const { error } = await supabase
-    .from('mp_matches')
-    .insert({ player_id: playerId, opponent_id: opponentId, room_code: roomCode, opponent_username: opponentUsername, result, moves })
-  if (error) throw error
+export async function saveMpMatch(
+  playerId: string,
+  opponentId: string,
+  roomCode: string,
+  opponentUsername: string,
+  result: string,
+  moves: number[],
+) {
+  const { error } = await supabase.from('mp_matches').insert({
+    player_id: playerId,
+    opponent_id: opponentId,
+    room_code: roomCode,
+    opponent_username: opponentUsername,
+    result,
+    moves,
+  })
+  if (error) throw new Error(error.message)
 }
 
-export function subscribeToRoom(code: string, onUpdate: (room: Record<string, unknown>) => void) {
+export function subscribeToRoom(
+  code: string,
+  onUpdate: (room: Record<string, unknown>) => void,
+) {
   return supabase
     .channel(`room-${code}`)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'mp_rooms', filter: `code=eq.${code}` },
-      payload => onUpdate(payload.new as Record<string, unknown>))
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'mp_rooms', filter: `code=eq.${code}` },
+      payload => onUpdate(payload.new as Record<string, unknown>),
+    )
     .subscribe()
 }
 
@@ -79,8 +113,31 @@ export async function getLeaderboard(limit = 10) {
     .select('username, mp_wins')
     .order('mp_wins', { ascending: false })
     .limit(limit)
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return data ?? []
+}
+
+export async function forfeitRoom(code: string, forfeiterPlayer: 1 | 2) {
+  const winner = forfeiterPlayer === 1 ? 2 : 1
+  const { error } = await supabase
+    .from('mp_rooms')
+    .update({ status: 'finished', winner })
+    .eq('code', code)
+  if (error) throw new Error(error.message)
+  return winner as 1 | 2
+}
+
+export async function getActiveRoom(userId: string) {
+  const { data, error } = await supabase
+    .from('mp_rooms')
+    .select()
+    .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
+    .in('status', ['waiting', 'playing'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) return null
+  return data
 }
 
 export async function getMpHistory(playerId: string) {
@@ -90,6 +147,6 @@ export async function getMpHistory(playerId: string) {
     .eq('player_id', playerId)
     .order('played_at', { ascending: false })
     .limit(30)
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return data ?? []
 }

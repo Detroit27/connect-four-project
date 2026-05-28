@@ -33,6 +33,9 @@ export const en = {
     signInRequired: 'You must sign in to play multiplayer.',
     matchHistory: 'Match history', noHistory: 'No online matches yet.', viewReplay: 'Replay',
     playAgain: 'Play again', mainMenu: 'Main menu',
+    forfeit: 'Forfeit', forfeitConfirm: 'Surrender the match?',
+    opponentForfeit: 'Opponent surrendered', youForfeit: 'You surrendered',
+    activeMatch: 'You have an active match', resume: 'Resume', activeCode: 'Room',
   },
   shop: {
     title: 'Shop', balance: 'Balance', yourSkin: 'Your chips',

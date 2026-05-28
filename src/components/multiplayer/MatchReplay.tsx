@@ -29,7 +29,7 @@ export function MatchReplay() {
         <span className={styles.counter}>{t.replay.move} {step + 1} {t.replay.of} {total}</span>
       </div>
 
-      <Board onColumnClick={() => {}} winInfo={winInfo} />
+      <Board onColumnClick={() => {}} winInfo={winInfo} boardOverride={board} disableClick />
 
       <div className={styles.controls}>
         <button className="btn-ghost" onClick={() => setStep(0)} disabled={step === 0}>«</button>

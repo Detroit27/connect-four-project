@@ -13,6 +13,18 @@
   padding: 40px 24px;
 }
 .authMsg { font-size: 15px; color: var(--text-muted); max-width: 300px; }
+.activeBanner {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 20px; background: var(--surface);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-md);
+}
+.activeBannerInfo { display: flex; flex-direction: column; gap: 3px; }
+.activeBannerTitle { font-size: 13px; font-weight: 500; color: var(--accent); }
+.activeBannerCode { font-size: 13px; color: var(--text-muted); }
+.activeBannerCode b { font-family: monospace; letter-spacing: 0.1em; color: var(--text); }
+.activeBannerActions { display: flex; gap: 8px; flex-shrink: 0; }
+
 .section { display: flex; flex-direction: column; gap: 14px; }
 .sectionTitle {
   font-family: var(--font-serif); font-size: 18px;

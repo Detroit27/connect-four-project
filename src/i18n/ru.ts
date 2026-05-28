@@ -35,6 +35,9 @@ export const ru: Translations = {
     signInRequired: 'Для игры онлайн необходимо войти в аккаунт.',
     matchHistory: 'История матчей', noHistory: 'Онлайн матчей пока нет.', viewReplay: 'Повтор',
     playAgain: 'Играть снова', mainMenu: 'Главное меню',
+    forfeit: 'Сдаться', forfeitConfirm: 'Сдать матч?',
+    opponentForfeit: 'Соперник сдался', youForfeit: 'Вы сдались',
+    activeMatch: 'У вас есть активный матч', resume: 'Продолжить', activeCode: 'Комната',
   },
   shop: {
     title: 'Магазин', balance: 'Баланс', yourSkin: 'Ваши фишки',
