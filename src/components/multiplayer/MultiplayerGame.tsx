@@ -152,9 +152,6 @@ export function MultiplayerGame({
     setReplayMatch(match)
   }
 
-  // --- Thinking indicator: dots when it's opponent's turn ---
-  const showThinking = !ended && !isMyTurn
-
   return (
     <div className={styles.container}>
       {/* Confetti on win */}
