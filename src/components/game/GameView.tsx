@@ -1,8 +1,8 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { useShopStore } from '../../store/shopStore'
 import { useAuthStore } from '../../store/authStore'
-import { dropChip, checkWin, isBoardFull } from '../../lib/gameLogic'
+import { dropChip, checkWin, isBoardFull, getWinningMove, getHintMove } from '../../lib/gameLogic'
 import { getAIMove } from '../../lib/ai'
 import { playClick, playWin, playLoss } from '../../lib/sound'
 import { useT } from '../../i18n'
@@ -29,7 +29,27 @@ export function GameView() {
   const { addCurrency } = useShopStore()
   const { updateCurrencyOnServer } = useAuthStore()
 
+  const [hintCol, setHintCol]   = useState<number | null>(null)
+  const [hintUsed, setHintUsed] = useState(false)
+
   const coins = COINS[difficulty]
+  const ended = !!(winInfo || isDraw)
+
+  // Win-blink: detect if player 1 is one move away from winning
+  const blinkCol = (!ended && currentPlayer === 1)
+    ? getWinningMove(board, 1)
+    : null
+
+  // Clear hint highlight after player makes a move
+  useEffect(() => {
+    setHintCol(null)
+  }, [board])
+
+  // Reset hint when game resets
+  useEffect(() => {
+    setHintUsed(false)
+    setHintCol(null)
+  }, [gameStartedAt])
 
   const handleMove = useCallback((col: number, player: typeof currentPlayer) => {
     const next = dropChip(board, col, player)
@@ -76,10 +96,15 @@ export function GameView() {
     return () => clearTimeout(timer)
   }, [currentPlayer, winInfo, isDraw, board, difficulty, handleMove, setIsAIThinking])
 
-  const ended = !!(winInfo || isDraw)
   const earnedCoins = ended
     ? (isDraw ? coins.loss : winInfo!.winner === 1 ? coins.win : coins.loss)
     : null
+
+  const handleHint = () => {
+    if (hintUsed || ended || currentPlayer !== 1) return
+    setHintCol(getHintMove(board))
+    setHintUsed(true)
+  }
 
   const statusText = () => {
     if (winInfo) return winInfo.winner === 1 ? t.game.youWin : t.game.aiWins
@@ -99,9 +124,28 @@ export function GameView() {
         <button className="btn-ghost" onClick={resetGame}>{t.game.restart}</button>
       </div>
 
-      <Board onColumnClick={(col) => {
-        if (currentPlayer === 1 && !winInfo && !isDraw) handleMove(col, 1)
-      }} winInfo={winInfo} />
+      <Board
+        onColumnClick={(col) => {
+          if (currentPlayer === 1 && !winInfo && !isDraw) handleMove(col, 1)
+        }}
+        winInfo={winInfo}
+        hintCol={hintCol}
+        blinkCol={blinkCol}
+      />
+
+      {/* Hint button — only available on player's turn, once per match */}
+      {!ended && (
+        <div className={styles.hintRow}>
+          <button
+            className={`${styles.hintBtn} ${hintUsed ? styles.hintDone : ''}`}
+            onClick={handleHint}
+            disabled={hintUsed || currentPlayer !== 1 || isAIThinking}
+            title={hintUsed ? t.game.hintUsed : t.game.hint}
+          >
+            {hintUsed ? `✓ ${t.game.hintUsed}` : `💡 ${t.game.hint}`}
+          </button>
+        </div>
+      )}
 
       {ended && (
         <div className={styles.result}>

@@ -36,7 +36,7 @@ export function SingleplayerView() {
         </div>
       </div>
 
-      <button className="btn-primary" onClick={startGame}>{t.singleplayer.startGame}</button>
+      <button className={`btn-primary ${styles.startBtn}`} onClick={startGame}>{t.singleplayer.startGame}</button>
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>{t.singleplayer.matchHistory}</h2>

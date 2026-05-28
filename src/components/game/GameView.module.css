@@ -25,3 +25,37 @@
   font-size: 13px; color: var(--accent); font-weight: 500;
 }
 .actions { display: flex; gap: 10px; }
+
+.hintRow {
+  display: flex;
+  justify-content: center;
+}
+
+.hintBtn {
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.hintBtn:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.hintBtn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.hintDone {
+  border-color: transparent;
+  color: var(--text-muted);
+  opacity: 0.6;
+}

@@ -1,8 +1,8 @@
 export const en = {
   common: { back: '← Back', loading: 'Loading…', error: 'Something went wrong', signIn: 'Sign in', signUp: 'Sign up', signOut: 'Sign out' },
   menu: {
-    singleplayer: 'Singleplayer', multiplayer: 'Multiplayer', shop: 'Shop', config: 'Config',
-    subtitles: { singleplayer: 'vs AI', multiplayer: 'Play online', shop: 'Skins & coins', config: 'Settings' },
+    singleplayer: 'Singleplayer', multiplayer: 'Multiplayer', shop: 'Shop', config: 'Config', about: 'About',
+    subtitles: { singleplayer: 'vs AI', multiplayer: 'Play online', shop: 'Skins & cases', config: 'Settings', about: 'Rules & info' },
   },
   auth: {
     email: 'Email', password: 'Password', username: 'Username',
@@ -21,6 +21,7 @@ export const en = {
     yourTurn: 'Your turn', aiTurn: "AI's turn", aiThinking: 'AI is thinking…',
     youWin: 'You win!', aiWins: 'AI wins', draw: 'Draw',
     playAgain: 'Play again', mainMenu: 'Main menu', restart: 'Restart', earned: 'coins earned',
+    hint: 'Hint', hintUsed: 'Hint used',
   },
   multiplayer: {
     title: 'Multiplayer', createRoom: 'Create room', joinRoom: 'Join room',
@@ -49,7 +50,9 @@ export const en = {
     duplicate: 'Already owned — you got a 50% coin refund!',
     skins: {
       classic: 'Classic', slate: 'Slate', forest: 'Forest', dusk: 'Dusk', obsidian: 'Obsidian', gold: 'Gold',
-      neon: 'Neon', lava: 'Lava', aurora: 'Aurora', void: 'Void', chrome: 'Chrome',
+      cappucino: 'Cappucino', chimp: 'Chimp', ballerina: 'Ballerina',
+      patapim: 'Patapim', tralala: 'Tralala', lirili: 'Lirili',
+      bomba: 'Bomba', trippi: 'Trippi', sahur: 'Sahur',
     },
     cases: {
       starter: 'Starter Case', neon: 'Neon Case', gold: 'Gold Case',
@@ -63,6 +66,20 @@ export const en = {
     usernameSaved: 'Username updated!', usernameTaken: 'That username is already taken.',
   },
   replay: { title: 'Match Replay', move: 'Move', of: 'of', close: 'Close' },
+  about: {
+    projectTitle: 'Connect Four',
+    projectDesc: 'A modern take on the classic two-player strategy game — play against a smart AI or challenge friends online. Collect skins, open cases, and climb the leaderboard.',
+    rulesTitle: 'How to Play',
+    rules: [
+      'Two players take turns dropping chips into a 7-column, 6-row grid.',
+      'Chips fall to the lowest available row in the chosen column.',
+      'The first player to connect 4 chips in a line — horizontal, vertical, or diagonal — wins.',
+      'If the board fills up with no winner, the game ends in a draw.',
+      'In singleplayer, use the Hint button once per match when you need a nudge.',
+    ],
+    techTitle: 'Built With',
+    techList: ['React', 'TypeScript', 'Vite', 'Supabase', 'Framer Motion', 'Zustand'],
+  },
 }
 
 export type Translations = typeof en

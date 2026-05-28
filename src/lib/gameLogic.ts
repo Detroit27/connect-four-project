@@ -53,6 +53,29 @@ export function getValidCols(board: Board): number[] {
   return Array.from({ length: COLS }, (_, i) => i).filter(c => board[0][c] === 0)
 }
 
+/** Returns the column where `player` can win in one move, or null */
+export function getWinningMove(board: Board, player: Player): number | null {
+  for (let col = 0; col < COLS; col++) {
+    const next = dropChip(board, col, player)
+    if (next && checkWin(next)?.winner === player) return col
+  }
+  return null
+}
+
+/** Quick hint for player 1: win > block > center */
+export function getHintMove(board: Board): number {
+  const cols = getValidCols(board)
+  for (const col of cols) {
+    const n = dropChip(board, col, 1); if (n && checkWin(n)) return col
+  }
+  for (const col of cols) {
+    const n = dropChip(board, col, 2); if (n && checkWin(n)) return col
+  }
+  // Prefer center columns
+  const preferred = [3, 2, 4, 1, 5, 0, 6]
+  return preferred.find(c => cols.includes(c)) ?? cols[0]
+}
+
 /** Восстанавливает доску из массива ходов до нужного индекса (включительно) */
 export function reconstructBoard(moves: number[], upTo: number): Board {
   let board = createBoard()

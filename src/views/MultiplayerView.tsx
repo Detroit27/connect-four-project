@@ -144,6 +144,11 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
 
   // Is the active room in a waiting state (no opponent yet)?
   const isActiveWaiting = activeRoom?.status === 'waiting'
+  const activeOpponent = activeRoom
+    ? (activeRoom.host_id === user.id
+        ? (activeRoom.guest_username ?? null)
+        : activeRoom.host_username)
+    : null
 
   return (
     <div className={styles.container}>
@@ -154,7 +159,11 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
           <div className={`${styles.activeBanner} ${isActiveWaiting ? styles.bannerWaiting : styles.bannerPlaying}`}>
             <div className={styles.activeBannerInfo}>
               <span className={styles.activeBannerTitle}>
-                {isActiveWaiting ? t.multiplayer.waitingMatch : t.multiplayer.activeMatch}
+                {isActiveWaiting
+                  ? t.multiplayer.waitingMatch
+                  : activeOpponent
+                    ? `${t.multiplayer.activeMatch} · vs ${activeOpponent}`
+                    : t.multiplayer.activeMatch}
               </span>
               <span className={styles.activeBannerCode}>
                 {t.multiplayer.activeCode}: <b>{activeRoom.code}</b>
@@ -190,7 +199,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
             <p className={styles.empty}>{t.common.loading}</p>
           ) : !activeRoom ? (
             <div className={styles.lobbyActions}>
-              <button className="btn-primary" onClick={handleCreate} disabled={loading}>
+              <button className={`btn-primary ${styles.bigBtn}`} onClick={handleCreate} disabled={loading}>
                 {t.multiplayer.createRoom}
               </button>
               <div className={styles.joinRow}>
@@ -201,7 +210,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
                   onChange={e => setJoinCode(e.target.value.toUpperCase())}
                   maxLength={6}
                 />
-                <button className="btn-ghost" onClick={handleJoin} disabled={loading || !joinCode.trim()}>
+                <button className={`btn-ghost ${styles.bigBtn}`} onClick={handleJoin} disabled={loading || !joinCode.trim()}>
                   {t.multiplayer.join}
                 </button>
               </div>

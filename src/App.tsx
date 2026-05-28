@@ -5,6 +5,7 @@ import { useGameStore } from './store/gameStore'
 import { useAuthStore } from './store/authStore'
 import { useShopStore } from './store/shopStore'
 import { getSkin, applySkinVars } from './lib/skins'
+import { BoardBackground } from './components/menu/BoardBackground'
 import { MainMenu } from './components/menu/MainMenu'
 import { AuthModal } from './components/ui/AuthModal'
 import { GameView } from './components/game/GameView'
@@ -13,6 +14,7 @@ import { SingleplayerView } from './views/SingleplayerView'
 import { MultiplayerView } from './views/MultiplayerView'
 import { ShopView } from './views/ShopView'
 import { ConfigView } from './views/ConfigView'
+import { AboutView } from './views/AboutView'
 import { useT } from './i18n'
 import styles from './App.module.css'
 
@@ -50,51 +52,63 @@ export default function App() {
 
   useEffect(() => { init() }, [init])
 
+  // Game and replay get a solid backdrop — board animation would be distracting during play
   if (screen === 'game') return <div className={styles.root}><GameView /></div>
   if (screen === 'replay') return <div className={styles.root}><MatchReplay /></div>
 
-  if (screen === 'menu') {
-    return (
-      <div className={styles.root}>
-        <MainMenu onAuthClick={() => setAuthOpen(true)} />
-        {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
-      </div>
-    )
-  }
-
+  // Menu + all sub-screens share the persistent BoardBackground
   return (
     <div className={styles.root}>
-      <AnimatePresence mode="wait">
-        {screen === 'singleplayer' && (
-          <motion.div key="sp" {...fade} transition={tx} className={styles.fill}>
-            <SubScreen title={t.menu.singleplayer} onBack={() => setScreen('menu')}>
-              <SingleplayerView />
-            </SubScreen>
-          </motion.div>
-        )}
-        {screen === 'multiplayer' && (
-          <motion.div key="mp" {...fade} transition={tx} className={styles.fill}>
-            <SubScreen title={t.menu.multiplayer} onBack={() => setScreen('menu')}>
-              <MultiplayerView onAuthRequired={() => setAuthOpen(true)} />
-            </SubScreen>
-          </motion.div>
-        )}
-        {screen === 'shop' && (
-          <motion.div key="sh" {...fade} transition={tx} className={styles.fill}>
-            <SubScreen title={t.menu.shop} onBack={() => setScreen('menu')}>
-              <ShopView />
-            </SubScreen>
-          </motion.div>
-        )}
-        {screen === 'config' && (
-          <motion.div key="cfg" {...fade} transition={tx} className={styles.fill}>
-            <SubScreen title={t.menu.config} onBack={() => setScreen('menu')}>
-              <ConfigView onAuthClick={() => setAuthOpen(true)} />
-            </SubScreen>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
+      <BoardBackground />
+
+      {screen === 'menu' && (
+        <>
+          <MainMenu onAuthClick={() => setAuthOpen(true)} />
+          {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
+        </>
+      )}
+
+      {screen !== 'menu' && (
+        <AnimatePresence mode="wait">
+          {screen === 'singleplayer' && (
+            <motion.div key="sp" {...fade} transition={tx} className={styles.fill}>
+              <SubScreen title={t.menu.singleplayer} onBack={() => setScreen('menu')}>
+                <SingleplayerView />
+              </SubScreen>
+            </motion.div>
+          )}
+          {screen === 'multiplayer' && (
+            <motion.div key="mp" {...fade} transition={tx} className={styles.fill}>
+              <SubScreen title={t.menu.multiplayer} onBack={() => setScreen('menu')}>
+                <MultiplayerView onAuthRequired={() => setAuthOpen(true)} />
+              </SubScreen>
+            </motion.div>
+          )}
+          {screen === 'shop' && (
+            <motion.div key="sh" {...fade} transition={tx} className={styles.fill}>
+              <SubScreen title={t.menu.shop} onBack={() => setScreen('menu')}>
+                <ShopView />
+              </SubScreen>
+            </motion.div>
+          )}
+          {screen === 'config' && (
+            <motion.div key="cfg" {...fade} transition={tx} className={styles.fill}>
+              <SubScreen title={t.menu.config} onBack={() => setScreen('menu')}>
+                <ConfigView onAuthClick={() => setAuthOpen(true)} />
+              </SubScreen>
+            </motion.div>
+          )}
+          {screen === 'about' && (
+            <motion.div key="about" {...fade} transition={tx} className={styles.fill}>
+              <SubScreen title={t.menu.about} onBack={() => setScreen('menu')}>
+                <AboutView />
+              </SubScreen>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
+
+      {authOpen && screen !== 'menu' && <AuthModal onClose={() => setAuthOpen(false)} />}
     </div>
   )
 }

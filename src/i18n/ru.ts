@@ -3,8 +3,8 @@ import type { Translations } from './en'
 export const ru: Translations = {
   common: { back: '← Назад', loading: 'Загрузка…', error: 'Что-то пошло не так', signIn: 'Войти', signUp: 'Регистрация', signOut: 'Выйти' },
   menu: {
-    singleplayer: 'Одиночная', multiplayer: 'Мультиплеер', shop: 'Магазин', config: 'Настройки',
-    subtitles: { singleplayer: 'против ИИ', multiplayer: 'Онлайн игра', shop: 'Скины и монеты', config: 'Параметры' },
+    singleplayer: 'Одиночная', multiplayer: 'Мультиплеер', shop: 'Магазин', config: 'Настройки', about: 'О проекте',
+    subtitles: { singleplayer: 'против ИИ', multiplayer: 'Онлайн игра', shop: 'Скины и кейсы', config: 'Параметры', about: 'Правила и инфо' },
   },
   auth: {
     email: 'Email', password: 'Пароль', username: 'Имя пользователя',
@@ -23,6 +23,7 @@ export const ru: Translations = {
     yourTurn: 'Ваш ход', aiTurn: 'Ход ИИ', aiThinking: 'ИИ думает…',
     youWin: 'Вы победили!', aiWins: 'ИИ победил', draw: 'Ничья',
     playAgain: 'Играть снова', mainMenu: 'Главное меню', restart: 'Рестарт', earned: 'монет получено',
+    hint: 'Подсказка', hintUsed: 'Подсказка использована',
   },
   multiplayer: {
     title: 'Мультиплеер', createRoom: 'Создать комнату', joinRoom: 'Войти в комнату',
@@ -51,7 +52,9 @@ export const ru: Translations = {
     duplicate: 'Уже есть — вы получили 50% монет обратно!',
     skins: {
       classic: 'Классика', slate: 'Сланец', forest: 'Лес', dusk: 'Закат', obsidian: 'Обсидиан', gold: 'Золото',
-      neon: 'Неон', lava: 'Лава', aurora: 'Аврора', void: 'Пустота', chrome: 'Хром',
+      cappucino: 'Капучино', chimp: 'Шимп', ballerina: 'Балерина',
+      patapim: 'Патапим', tralala: 'Тралала', lirili: 'Лирили',
+      bomba: 'Бомба', trippi: 'Триппи', sahur: 'Сахур',
     },
     cases: {
       starter: 'Стартовый кейс', neon: 'Неоновый кейс', gold: 'Золотой кейс',
@@ -65,4 +68,18 @@ export const ru: Translations = {
     usernameSaved: 'Имя обновлено!', usernameTaken: 'Это имя уже занято.',
   },
   replay: { title: 'Повтор матча', move: 'Ход', of: 'из', close: 'Закрыть' },
+  about: {
+    projectTitle: 'Четыре в ряд',
+    projectDesc: 'Современная версия классической стратегической игры для двух игроков — играйте против умного ИИ или бросайте вызов друзьям онлайн. Собирайте скины, открывайте кейсы и взбирайтесь на вершину таблицы лидеров.',
+    rulesTitle: 'Как играть',
+    rules: [
+      'Два игрока по очереди бросают фишки в сетку из 7 столбцов и 6 рядов.',
+      'Фишки падают на самое нижнее свободное место в выбранном столбце.',
+      'Побеждает первый игрок, выстроивший 4 фишки в ряд — по горизонтали, вертикали или диагонали.',
+      'Если доска заполнена и победитель не определён — ничья.',
+      'В одиночной игре можно использовать подсказку один раз за матч.',
+    ],
+    techTitle: 'Технологии',
+    techList: ['React', 'TypeScript', 'Vite', 'Supabase', 'Framer Motion', 'Zustand'],
+  },
 }

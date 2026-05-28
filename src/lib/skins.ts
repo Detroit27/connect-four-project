@@ -23,11 +23,15 @@ export const SKINS: Skin[] = [
 
 /** ── Case-exclusive skins (obtained via case opening only) ─────────────── */
 export const CASE_SKINS: Skin[] = [
-  { id: 'neon',    nameKey: 'neon',    price: -1, p1Color: '#06B6D4', p1Shadow: 'rgba(6,182,212,0.40)',   glowColor: 'rgba(6,182,212,0.55)' },
-  { id: 'lava',    nameKey: 'lava',    price: -1, p1Color: '#FF4500', p1Shadow: 'rgba(255,69,0,0.40)',    glowColor: 'rgba(255,100,0,0.50)' },
-  { id: 'aurora',  nameKey: 'aurora',  price: -1, p1Color: '#10B981', p1Shadow: 'rgba(16,185,129,0.40)',  glowColor: 'rgba(16,185,129,0.50)' },
-  { id: 'void',    nameKey: 'void',    price: -1, p1Color: '#7C3AED', p1Shadow: 'rgba(124,58,237,0.45)',  glowColor: 'rgba(167,139,250,0.55)' },
-  { id: 'chrome',  nameKey: 'chrome',  price: -1, p1Color: '#94A3B8', p1Shadow: 'rgba(148,163,184,0.40)' },
+  { id: 'cappucino', nameKey: 'cappucino', price: -1, p1Color: '#6F4E37', p1Shadow: 'rgba(111,78,55,0.40)',  image: '/skins/cappucino.jpg' },
+  { id: 'chimp',     nameKey: 'chimp',     price: -1, p1Color: '#F9A825', p1Shadow: 'rgba(249,168,37,0.40)', image: '/skins/chimp.jpg' },
+  { id: 'ballerina', nameKey: 'ballerina', price: -1, p1Color: '#E91E8C', p1Shadow: 'rgba(233,30,140,0.40)', image: '/skins/ballerina.jpg' },
+  { id: 'patapim',   nameKey: 'patapim',   price: -1, p1Color: '#00BCD4', p1Shadow: 'rgba(0,188,212,0.40)',  glowColor: 'rgba(0,188,212,0.55)',  image: '/skins/patapim.jpg' },
+  { id: 'tralala',   nameKey: 'tralala',   price: -1, p1Color: '#2196F3', p1Shadow: 'rgba(33,150,243,0.40)', glowColor: 'rgba(33,150,243,0.55)', image: '/skins/tralala.jpg' },
+  { id: 'lirili',    nameKey: 'lirili',    price: -1, p1Color: '#4CAF50', p1Shadow: 'rgba(76,175,80,0.40)',  glowColor: 'rgba(76,175,80,0.50)',  image: '/skins/lirili.jpg' },
+  { id: 'bomba',     nameKey: 'bomba',     price: -1, p1Color: '#FF5722', p1Shadow: 'rgba(255,87,34,0.40)',  glowColor: 'rgba(255,87,34,0.55)',  image: '/skins/bomba.jpg' },
+  { id: 'trippi',    nameKey: 'trippi',    price: -1, p1Color: '#9C27B0', p1Shadow: 'rgba(156,39,176,0.45)', glowColor: 'rgba(156,39,176,0.55)', image: '/skins/trippi.jpg' },
+  { id: 'sahur',     nameKey: 'sahur',     price: -1, p1Color: '#FF8F00', p1Shadow: 'rgba(255,143,0,0.40)',  glowColor: 'rgba(255,143,0,0.60)',  image: '/skins/sahur.jpg' },
 ]
 
 /** All skins combined — used for lookup */

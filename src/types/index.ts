@@ -3,7 +3,7 @@ export type Cell = 0 | Player
 export type Board = Cell[][]
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'extrahard'
 export type GameResult = 'win' | 'loss' | 'draw'
-export type Screen = 'menu' | 'singleplayer' | 'multiplayer' | 'shop' | 'config' | 'game' | 'mp_game' | 'replay'
+export type Screen = 'menu' | 'singleplayer' | 'multiplayer' | 'shop' | 'config' | 'about' | 'game' | 'mp_game' | 'replay'
 export type Theme = 'light' | 'dark'
 export type Language = 'en' | 'ru'
 

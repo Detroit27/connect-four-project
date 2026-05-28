@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { motion, AnimatePresence } from 'framer-motion'
-import { dropChip, checkWin, isBoardFull } from '../../lib/gameLogic'
-import { pushMove as dbPushMove, subscribeToRoom, saveMpMatch, forfeitRoom } from '../../lib/multiplayer'
+import { dropChip, checkWin, isBoardFull, getWinningMove } from '../../lib/gameLogic'
+import { pushMove as dbPushMove, subscribeToRoom, saveMpMatch, forfeitRoom, getRoomByCode } from '../../lib/multiplayer'
 import { supabase } from '../../lib/supabase'
 import { playClick, playWin, playLoss } from '../../lib/sound'
 import { useShopStore } from '../../store/shopStore'
@@ -25,6 +25,7 @@ interface Props {
 
 const WIN_COINS  = 80
 const LOSS_COINS = 15
+const POLL_MS    = 3000   // fallback poll when Realtime subscription misses updates
 
 export function MultiplayerGame({
   roomCode, initialBoard, initialMoves, myPlayer, opponentUsername, onExit,
@@ -34,40 +35,60 @@ export function MultiplayerGame({
   const { user, profile, updateCurrencyOnServer, loadProfile } = useAuthStore()
   const { setReplayMatch } = useGameStore()
 
-  const [board, setBoard]                   = useState<BoardType>(initialBoard)
-  const [moves, setMoves]                   = useState<number[]>(initialMoves)
-  const [currentPlayer, setCurrentPlayer]   = useState<Player>(1)
-  const [winInfo, setWinInfo]               = useState<WinInfo | null>(null)
-  const [isDraw, setIsDraw]                 = useState(false)
-  const [forfeitWinner, setForfeitWinner]   = useState<Player | null>(null)
-  const [saved, setSaved]                   = useState(false)
+  const [board, setBoard]                 = useState<BoardType>(initialBoard)
+  const [moves, setMoves]                 = useState<number[]>(initialMoves)
+  const [currentPlayer, setCurrentPlayer] = useState<Player>(1)
+  const [winInfo, setWinInfo]             = useState<WinInfo | null>(null)
+  const [isDraw, setIsDraw]               = useState(false)
+  const [forfeitWinner, setForfeitWinner] = useState<Player | null>(null)
+  const [saved, setSaved]                 = useState(false)
   const channelRef = useRef<RealtimeChannel | null>(null)
 
   const ended    = !!(winInfo || isDraw || forfeitWinner)
   const isMyTurn = currentPlayer === myPlayer
   const myUsername = profile?.username ?? user?.email ?? 'You'
 
+  // Win-blink: column where I can win in one move
+  const blinkCol = (!ended && isMyTurn)
+    ? getWinningMove(board, myPlayer)
+    : null
+
+  /** Apply a room snapshot — used by both Realtime and polling */
+  const applyRoom = useCallback((room: Record<string, unknown>) => {
+    const b  = room.board as BoardType
+    const m  = room.moves as number[]
+    const cp = room.current_player as Player
+    setBoard(b); setMoves(m); setCurrentPlayer(cp)
+
+    if (room.status === 'finished') {
+      const win = checkWin(b)
+      if (win) { setWinInfo(win); return }
+      if (room.winner === 0) { setIsDraw(true); return }
+      if (room.winner) setForfeitWinner(room.winner as Player)
+    } else {
+      const win = checkWin(b)
+      if (win) setWinInfo(win)
+      else if (isBoardFull(b)) setIsDraw(true)
+    }
+  }, [])
+
   // --- Realtime subscription ---
   useEffect(() => {
-    channelRef.current = subscribeToRoom(roomCode, (room) => {
-      const b  = room.board as BoardType
-      const m  = room.moves as number[]
-      const cp = room.current_player as Player
-      setBoard(b); setMoves(m); setCurrentPlayer(cp)
-
-      if (room.status === 'finished') {
-        const win = checkWin(b)
-        if (win) { setWinInfo(win); return }
-        if (room.winner === 0) { setIsDraw(true); return }
-        if (room.winner) setForfeitWinner(room.winner as Player)
-      } else {
-        const win = checkWin(b)
-        if (win) setWinInfo(win)
-        else if (isBoardFull(b)) setIsDraw(true)
-      }
-    })
+    channelRef.current = subscribeToRoom(roomCode, applyRoom)
     return () => { channelRef.current?.unsubscribe() }
-  }, [roomCode])
+  }, [roomCode, applyRoom])
+
+  // --- Polling fallback (in case Realtime isn't enabled in Supabase dashboard) ---
+  useEffect(() => {
+    if (ended) return
+    const timer = setInterval(async () => {
+      try {
+        const room = await getRoomByCode(roomCode)
+        if (room) applyRoom(room as Record<string, unknown>)
+      } catch (e) { /* silent */ }
+    }, POLL_MS)
+    return () => clearInterval(timer)
+  }, [roomCode, ended, applyRoom])
 
   // --- Save result, award coins, update leaderboard ---
   useEffect(() => {
@@ -84,11 +105,10 @@ export function MultiplayerGame({
     addCurrency(coins)
     updateCurrencyOnServer(coins)
 
-    // Play sound
     if (result === 'win') playWin()
     else if (result === 'loss') playLoss()
 
-    // Update mp_wins counter and refresh profile
+    // Update mp_wins counter
     if (result === 'win') {
       ;(async () => {
         try {
@@ -154,21 +174,19 @@ export function MultiplayerGame({
 
   return (
     <div className={styles.container}>
-      {/* Confetti on win */}
       {myResult === 'win' && <Confetti />}
 
       {/* ── Header ── */}
       <div className={styles.header}>
         <button className="btn-ghost" onClick={onExit}>{t.common.back}</button>
 
-        {/* Player vs Player */}
         <div className={styles.versus}>
-          <div className={`${styles.playerLabel} ${myPlayer === 1 ? styles.activePlayer : ''}`}>
+          <div className={`${styles.playerLabel} ${currentPlayer === myPlayer && !ended ? styles.activePlayer : ''}`}>
             <span className={`${styles.dot} ${styles.p1}`} />
             <span className={styles.playerName}>{myUsername}</span>
           </div>
           <span className={styles.vsText}>vs</span>
-          <div className={`${styles.playerLabel} ${myPlayer === 2 ? styles.activePlayer : ''}`}>
+          <div className={`${styles.playerLabel} ${currentPlayer !== myPlayer && !ended ? styles.activePlayer : ''}`}>
             <span className={`${styles.dot} ${styles.p2}`} />
             <span className={styles.playerName}>{opponentUsername}</span>
           </div>
@@ -201,6 +219,7 @@ export function MultiplayerGame({
         winInfo={winInfo}
         boardOverride={board}
         disableClick={!isMyTurn || ended}
+        blinkCol={blinkCol}
       />
 
       {/* ── Game-over overlay ── */}

@@ -1,51 +1,210 @@
 .root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-  padding: 28px clamp(16px, 5vw, 48px);
+  --ml-inset: clamp(36px, 7vw, 96px);
   position: relative;
+  min-height: 100%;
   overflow: hidden;
 }
 
-.header {
+.content {
+  position: relative;
+  z-index: 1;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: clamp(32px, 6vh, 64px);
-  position: relative; z-index: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 56px 48px 56px var(--ml-inset);
+  min-height: 100vh;
+  gap: 36px;
 }
 
-.logo {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 26px;
+/* ── Profile ─────────────────────────────── */
+.profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatarWrap {
+  position: relative;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 160ms ease;
+  padding: 0;
+}
+
+.avatar:hover {
+  transform: scale(1.07);
+}
+
+.avatarEditIcon {
+  font-size: 20px;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.48);
+  border-radius: 50%;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.avatar:hover .avatarEditIcon {
+  opacity: 1;
+}
+
+.skinPicker {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: rgba(10, 10, 28, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 12px;
+  z-index: 30;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  max-width: 228px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.pickerChip {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.pickerChip:hover {
+  transform: scale(1.14);
+}
+
+.pickerActive {
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+/* ── Name ─────────────────────────────────── */
+.nameArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+}
+
+.nameDisplay {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 8px;
+  transition: background 140ms ease;
+}
+
+.nameDisplay:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nameText {
+  font-size: 15px;
   font-weight: 600;
-  color: var(--accent);
-  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.90);
+  letter-spacing: 0.01em;
 }
 
-.authArea {
+.nameEditHint {
+  font-size: 11px;
+  opacity: 0;
+  transition: opacity 140ms ease;
+  line-height: 1;
+}
+
+.nameDisplay:hover .nameEditHint {
+  opacity: 0.65;
+}
+
+.nameEditRow {
   display: flex;
   align-items: center;
+  gap: 5px;
 }
 
-.userRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.nameInput {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 5px 10px;
+  outline: none;
+  width: 138px;
+  transition: border-color 140ms;
 }
 
-.username {
+.nameInput:focus {
+  border-color: var(--accent);
+}
+
+.nameSaveBtn,
+.nameCancelBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
   font-size: 13px;
-  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 120ms ease, background 120ms ease;
+  flex-shrink: 0;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  max-width: 640px;
-  width: 100%;
-  margin: 0 auto;
-  position: relative; z-index: 1;
+.nameSaveBtn {
+  background: var(--accent);
+  color: #fff;
+}
+
+.nameSaveBtn:hover { filter: brightness(1.18); }
+.nameSaveBtn:disabled { opacity: 0.5; cursor: default; }
+
+.nameCancelBtn {
+  background: rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.80);
+}
+
+.nameCancelBtn:hover { background: rgba(255, 255, 255, 0.18); }
+
+/* ── Nav Tiles ────────────────────────────── */
+.tiles {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: calc(-1 * var(--ml-inset));
+  width: min(560px, 100vw);
 }
