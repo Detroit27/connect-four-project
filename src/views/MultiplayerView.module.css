@@ -55,8 +55,40 @@
 .bannerWaiting .activeBannerTitle { color: #D97706; }
 .bannerPlaying .activeBannerTitle { color: #16A34A; }
 
-.activeBannerCode { font-size: 13px; color: var(--text-muted); }
-.activeBannerCode b { font-family: monospace; letter-spacing: 0.1em; color: var(--text); }
+.activeBannerLabel { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.codeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bannerCodeBig {
+  font-family: monospace;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--text);
+}
+
+.copyBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--surface-alt, var(--border));
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  transition: background 150ms, color 150ms;
+}
+.copyBtn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 .activeBannerActions { display: flex; gap: 8px; flex-shrink: 0; }
 

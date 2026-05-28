@@ -182,12 +182,20 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
                   ? t.multiplayer.waitingMatch
                   : t.multiplayer.activeMatch}
               </span>
-              <span className={styles.activeBannerCode}>
-                {t.multiplayer.activeCode}: <b>{activeRoom.code}</b>
+              <div className={styles.codeRow}>
+                <span className={styles.activeBannerLabel}>{t.multiplayer.activeCode}</span>
+                <span className={styles.bannerCodeBig}>{activeRoom.code}</span>
+                <button
+                  className={styles.copyBtn}
+                  title="Copy room code"
+                  onClick={() => navigator.clipboard.writeText(activeRoom.code)}
+                >
+                  ⎘
+                </button>
                 {activeRoom.status === 'waiting' && (
-                  <>&nbsp;<span className={styles.waitDots}><span /><span /><span /></span></>
+                  <span className={styles.waitDots}><span /><span /><span /></span>
                 )}
-              </span>
+              </div>
             </div>
             <div className={styles.activeBannerActions}>
               {activeRoom.status === 'waiting' ? (

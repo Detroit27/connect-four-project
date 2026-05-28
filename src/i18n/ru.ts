@@ -40,7 +40,7 @@ export const ru: Translations = {
     forfeit: 'Сдаться', forfeitConfirm: 'Сдать матч?',
     opponentForfeit: 'Соперник сдался', youForfeit: 'Вы сдались',
     activeMatch: 'Активный матч', waitingMatch: 'Ожидание игрока',
-    resume: 'Продолжить', activeCode: 'Комната',
+    resume: 'Продолжить', activeCode: 'ID Комнаты',
     cancelWait: 'Отменить',
   },
   shop: {

@@ -16,6 +16,8 @@ interface Props {
   hintCol?: number | null
   /** Column that blinks yellow — player is one move from winning here */
   blinkCol?: number | null
+  /** Which cell value (1 or 2) belongs to the local user — skin applied to those chips */
+  myPlayer?: 1 | 2
 }
 
 const ROWS = 6
@@ -25,7 +27,7 @@ function isWinCell(row: number, col: number, w: WinInfo | null) {
   return w?.cells.some(([r, c]) => r === row && c === col) ?? false
 }
 
-export function Board({ onColumnClick, winInfo, boardOverride, disableClick, hintCol, blinkCol }: Props) {
+export function Board({ onColumnClick, winInfo, boardOverride, disableClick, hintCol, blinkCol, myPlayer = 1 }: Props) {
   const { board: storeBoard, isAIThinking } = useGameStore()
   const { currentSkin } = useShopStore()
   const board = boardOverride ?? storeBoard
@@ -54,6 +56,7 @@ export function Board({ onColumnClick, winInfo, boardOverride, disableClick, hin
                 const cell    = board[row][col]
                 const winning = isWinCell(row, col, winInfo)
                 const isP1    = cell === 1
+                const isMine  = cell === myPlayer
 
                 return (
                   <div key={row} className={styles.cell}>
@@ -63,7 +66,7 @@ export function Board({ onColumnClick, winInfo, boardOverride, disableClick, hin
                           <motion.div
                             key={`${row}-${col}`}
                             className={`${styles.chip} ${isP1 ? styles.p1 : styles.p2} ${winning ? styles.winning : ''}`}
-                            style={isP1 && skin.image ? {
+                            style={isMine && skin.image ? {
                               backgroundImage: `url(${skin.image})`,
                               backgroundSize: 'cover',
                               backgroundPosition: 'center',

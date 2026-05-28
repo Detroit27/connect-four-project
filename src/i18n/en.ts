@@ -38,7 +38,7 @@ export const en = {
     forfeit: 'Forfeit', forfeitConfirm: 'Surrender the match?',
     opponentForfeit: 'Opponent surrendered', youForfeit: 'You surrendered',
     activeMatch: 'Active match', waitingMatch: 'Waiting for player',
-    resume: 'Resume', activeCode: 'Room',
+    resume: 'Resume', activeCode: 'Room ID',
     cancelWait: 'Cancel',
   },
   shop: {

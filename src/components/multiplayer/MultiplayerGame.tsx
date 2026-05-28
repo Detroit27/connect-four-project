@@ -283,6 +283,7 @@ export function MultiplayerGame({
         boardOverride={board}
         disableClick={!isMyTurn}
         blinkCol={blinkCol}
+        myPlayer={myPlayer}
       />
 
       {/* Result overlay */}
