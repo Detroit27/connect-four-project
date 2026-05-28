@@ -65,6 +65,7 @@ export function MultiplayerGame({ room, myId, myUsername, setRoom, onExit }: Pro
 
     const newMoves   = [...room.moves, col]
     const nextPlayer: Player = myPlayer === 1 ? 2 : 1
+    console.log('[MP] my move', { col, newLen: newMoves.length, myPlayer, nextPlayer, code: room.code })
     const win  = checkWin(next)
     const full = !win && isBoardFull(next)
     const prev = room
@@ -90,9 +91,10 @@ export function MultiplayerGame({ room, myId, myUsername, setRoom, onExit }: Pro
       let saved: Room
       try { saved = await write() }
       catch (e1) { console.warn('[MP] move write retry', e1); saved = await write() }
+      console.log('[MP] move saved OK', { savedLen: saved.moves.length, savedCur: saved.current_player })
       setRoom(saved)
     } catch (e) {
-      console.error('[MP] move write failed, rolling back:', e)
+      console.error('[MP] move write FAILED, rolling back:', e)
       setRoom(prev)           // un-apply the optimistic move so the player can retry
       setSyncError(true)
     }

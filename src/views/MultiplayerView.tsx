@@ -32,8 +32,17 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     setRoom(prev => {
       if (!prev || prev.code !== incoming.code) return incoming
       if (incoming.status === 'finished' || incoming.status === 'cancelled') return incoming
-      if (STATUS_RANK[incoming.status] < STATUS_RANK[prev.status]) return prev
-      if (incoming.moves.length < prev.moves.length) return prev
+      if (STATUS_RANK[incoming.status] < STATUS_RANK[prev.status]) {
+        console.log('[MP] merge REJECT (status regress)', { prev: prev.status, in: incoming.status })
+        return prev
+      }
+      if (incoming.moves.length < prev.moves.length) {
+        console.log('[MP] merge REJECT (stale moves)', { prevLen: prev.moves.length, inLen: incoming.moves.length, prevCur: prev.current_player, inCur: incoming.current_player })
+        return prev
+      }
+      if (incoming.moves.length !== prev.moves.length || incoming.current_player !== prev.current_player || incoming.status !== prev.status) {
+        console.log('[MP] merge ACCEPT', { moves: incoming.moves.length, cur: incoming.current_player, status: incoming.status })
+      }
       return incoming
     })
   }, [])
