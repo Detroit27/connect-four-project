@@ -110,7 +110,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
       setActiveRoom(null)
       setMyPlayer(2)
       setMpScreen('game')
-    } catch (e: any) { setError(e.message) }
+    } catch (e: any) { console.error('[MP] join failed:', e); setError(e.message) }
     finally { setLoading(false) }
   }
 
@@ -211,9 +211,10 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
                   placeholder={t.multiplayer.enterCode}
                   value={joinCode}
                   onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                  onKeyDown={e => { if (e.key === 'Enter' && joinCode.trim() && !loading) handleJoin() }}
                   maxLength={6}
                 />
-                <button className={`btn-ghost ${styles.bigBtn}`} onClick={handleJoin} disabled={loading || !joinCode.trim()}>
+                <button className={`btn-primary ${styles.bigBtn}`} onClick={handleJoin} disabled={loading || !joinCode.trim()}>
                   {t.multiplayer.join}
                 </button>
               </div>
