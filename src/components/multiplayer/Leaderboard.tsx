@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { getLeaderboard } from '../../lib/multiplayer'
+import { useAuthStore } from '../../store/authStore'
 import { useT } from '../../i18n'
 import styles from './Leaderboard.module.css'
 
-interface Entry { username: string; mp_wins: number }
+interface Entry { id: string; username: string; mp_wins: number }
 
 export function Leaderboard() {
   const t = useT()
+  const { user } = useAuthStore()
   const [rows, setRows] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -29,13 +31,16 @@ export function Leaderboard() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.username} className={i === 0 ? styles.first : ''}>
-                <td>{i + 1}</td>
-                <td>{r.username}</td>
-                <td>{r.mp_wins}</td>
-              </tr>
-            ))}
+            {rows.map((r, i) => {
+              const isMe = !!user && r.id === user.id
+              return (
+                <tr key={r.id} className={isMe ? styles.me : ''}>
+                  <td>{i === 0 ? '🏆' : i + 1}</td>
+                  <td>{r.username}{isMe ? ' (you)' : ''}</td>
+                  <td>{r.mp_wins}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       )}

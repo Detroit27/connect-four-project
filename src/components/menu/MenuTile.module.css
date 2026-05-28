@@ -7,52 +7,44 @@
   min-height: 90px;
   padding: 24px 52px 24px 40px;
 
-  /* Jewel-tone deep purple gradient */
-  background: linear-gradient(
-    108deg,
-    rgba(40, 24, 90, 0.90) 0%,
-    rgba(14, 9, 40, 0.84) 100%
-  );
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-
-  /* Left accent strip + subtle borders */
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.28);
-  border-left: 3px solid rgba(118, 105, 240, 0.42);
+  /* Solid two-tone palette — inverted vs the page background */
+  background: var(--text);                 /* maroon in light, cream in dark */
+  border-left: 4px solid var(--accent);    /* amber accent strip */
+  border-top: none;
+  border-bottom: none;
   border-right: none;
-
-  /* Left rounded, right flat — bleeds off screen-right */
-  border-radius: var(--radius-lg, 18px) 0 0 var(--radius-lg, 18px);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
 
   cursor: pointer;
   text-align: left;
-  transition: background 200ms ease, border-left-color 200ms ease, box-shadow 200ms ease;
+  transition: background 180ms ease, border-left-color 180ms ease;
   will-change: transform;
 }
 
 .tile:hover {
-  background: linear-gradient(
-    108deg,
-    rgba(68, 44, 150, 0.96) 0%,
-    rgba(22, 13, 62, 0.92) 100%
-  );
-  border-left-color: rgba(158, 144, 255, 0.85);
-  box-shadow: -8px 0 32px rgba(110, 96, 240, 0.24);
+  background: var(--accent);
+  border-left-color: var(--text);
 }
 
 .title {
   font-family: var(--font-serif);
   font-size: clamp(20px, 2.3vw, 26px);
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.97);
+  font-weight: 700;
+  color: var(--bg);                        /* cream in light, maroon in dark */
   letter-spacing: -0.02em;
   line-height: 1.1;
+  transition: color 180ms ease;
 }
 
 .subtitle {
   font-size: 13px;
-  font-weight: 400;
-  color: rgba(188, 178, 255, 0.50);
+  font-weight: 500;
+  color: var(--accent);
   letter-spacing: 0.01em;
+  transition: color 180ms ease;
+}
+
+.tile:hover .title,
+.tile:hover .subtitle {
+  color: var(--accent-ink);
 }

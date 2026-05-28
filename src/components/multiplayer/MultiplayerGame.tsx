@@ -103,7 +103,7 @@ export function MultiplayerGame({
 
     const coins = result === 'win' ? WIN_COINS : LOSS_COINS
     addCurrency(coins)
-    updateCurrencyOnServer(coins)
+    updateCurrencyOnServer()
 
     if (result === 'win') playWin()
     else if (result === 'loss') playLoss()

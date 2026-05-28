@@ -110,7 +110,7 @@ export function subscribeToRoom(
 export async function getLeaderboard(limit = 10) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('username, mp_wins')
+    .select('id, username, mp_wins')
     .order('mp_wins', { ascending: false })
     .limit(limit)
   if (error) throw new Error(error.message)

@@ -15,7 +15,7 @@ interface AuthState {
   signUp: (email: string, password: string, username: string) => Promise<void>
   signOut: () => Promise<void>
   loadProfile: (userId: string) => Promise<void>
-  updateCurrencyOnServer: (amount: number) => Promise<void>
+  updateCurrencyOnServer: () => Promise<void>
   updateSkinOnServer: (skinId: string, inventory: string[]) => Promise<void>
   updateUsername: (username: string) => Promise<void>
   setError: (e: string | null) => void
@@ -86,12 +86,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  updateCurrencyOnServer: async (amount) => {
-    const { user, profile } = get()
-    if (!user || !profile) return
-    const newAmount = profile.currency + amount
-    await supabase.from('profiles').update({ currency: newAmount }).eq('id', user.id)
-    set(s => ({ profile: s.profile ? { ...s.profile, currency: newAmount } : null }))
+  // Writes the shop store's ABSOLUTE balance (single source of truth) so that
+  // earnings, purchases and case-openings all persist consistently.
+  updateCurrencyOnServer: async () => {
+    const { user } = get()
+    if (!user) return
+    const currency = useShopStore.getState().currency
+    await supabase.from('profiles').update({ currency }).eq('id', user.id)
+    set(s => ({ profile: s.profile ? { ...s.profile, currency } : null }))
   },
 
   updateSkinOnServer: async (skinId, inventory) => {

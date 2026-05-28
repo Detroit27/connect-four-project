@@ -23,13 +23,14 @@ const BUYABLE: Skin[] = [...SKINS, ...CASE_SKINS]
 export function ShopView() {
   const t = useT()
   const { currency, buySkin, openCase, owns } = useShopStore()
-  const { updateSkinOnServer } = useAuthStore()
+  const { updateSkinOnServer, updateCurrencyOnServer } = useAuthStore()
 
   const [pendingOpen, setPendingOpen] = useState<PendingOpen | null>(null)
 
   const handleBuy = (id: string) => {
     if (buySkin(id)) {
-      // Persist new inventory (skin acquisition only — equipping happens on the menu)
+      // Persist both the new balance and the new inventory
+      updateCurrencyOnServer()
       updateSkinOnServer(useShopStore.getState().currentSkin, useShopStore.getState().inventory)
     }
   }
@@ -47,6 +48,8 @@ export function ShopView() {
   }
 
   const handleClaim = () => {
+    // Case opening already adjusted the balance + inventory — persist both
+    updateCurrencyOnServer()
     updateSkinOnServer(useShopStore.getState().currentSkin, useShopStore.getState().inventory)
     setPendingOpen(null)
   }

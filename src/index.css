@@ -1,12 +1,14 @@
 :root {
-  --bg: #F7F9FF;
-  --surface: #ECEFFE;
-  --surface-2: #E1E5FA;
-  --border: #C4CBF0;
-  --text: #181A38;
-  --text-muted: #5E64A0;
-  --accent: #4F56E3;
-  --accent-hover: #3B42CC;
+  /* Light theme — cream base (#FFF7C5), maroon ink (#4F252E), amber accent (#F4AE52) */
+  --bg: #FFF7C5;
+  --surface: #FBEDA8;
+  --surface-2: #F6E08C;
+  --border: #E7CE83;
+  --text: #4F252E;
+  --text-muted: #976A5E;
+  --accent: #F4AE52;
+  --accent-hover: #E89A33;
+  --accent-ink: #4F252E;          /* readable text on amber */
   --player1: #E63946;
   --player2: #4F56E3;
   --player1-shadow: rgba(230,57,70,0.28);
@@ -24,16 +26,18 @@
 }
 
 [data-theme='dark'] {
-  --bg: #0D0F22;
-  --surface: #14172C;
-  --surface-2: #1C1F3A;
-  --border: #252849;
-  --text: #E6EAFF;
-  --text-muted: #6A71AA;
-  --accent: #6E74EF;
-  --accent-hover: #9196F5;
+  /* Dark theme — colours swapped: maroon base, cream ink, amber accent */
+  --bg: #4F252E;
+  --surface: #5E2E38;
+  --surface-2: #6E3A44;
+  --border: #7C4852;
+  --text: #FFF7C5;
+  --text-muted: #C7A89B;
+  --accent: #F4AE52;
+  --accent-hover: #F7C175;
+  --accent-ink: #4F252E;
   --player1-shadow: rgba(230,57,70,0.22);
-  --player2-shadow: rgba(110,116,239,0.22);
+  --player2-shadow: rgba(79,86,227,0.22);
 }
 
 *, *::before, *::after {
@@ -69,10 +73,10 @@ button {
   justify-content: center;
   gap: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   font-family: var(--font-sans);
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.02em;
   padding: 12px 28px;
   border-radius: var(--radius-full);

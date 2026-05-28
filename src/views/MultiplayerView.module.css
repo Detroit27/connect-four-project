@@ -29,7 +29,7 @@
   padding: 40px 24px;
 }
 
-.authMsg { font-size: 15px; color: rgba(255, 255, 255, 0.55); max-width: 300px; }
+.authMsg { font-size: 15px; color: var(--text-muted); max-width: 300px; }
 
 /* ── Active / Waiting banners ── */
 .activeBanner {
@@ -38,9 +38,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 18px 22px;
-  background: rgba(10, 12, 30, 0.76);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: var(--surface);
   border-radius: var(--radius-md);
   border: 1.5px solid var(--accent);
 }
@@ -57,8 +55,8 @@
 .bannerWaiting .activeBannerTitle { color: #D97706; }
 .bannerPlaying .activeBannerTitle { color: #16A34A; }
 
-.activeBannerCode { font-size: 13px; color: rgba(255, 255, 255, 0.50); }
-.activeBannerCode b { font-family: monospace; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.80); }
+.activeBannerCode { font-size: 13px; color: var(--text-muted); }
+.activeBannerCode b { font-family: monospace; letter-spacing: 0.1em; color: var(--text); }
 
 .activeBannerActions { display: flex; gap: 8px; flex-shrink: 0; }
 
@@ -69,7 +67,7 @@
   font-family: var(--font-serif);
   font-size: 19px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--text);
   letter-spacing: -0.01em;
 }
 
@@ -92,28 +90,27 @@
 
 .input {
   flex: 1;
-  background: rgba(12, 14, 32, 0.72);
-  border: 1.5px solid rgba(255, 255, 255, 0.10);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 14px 18px;
   font-family: monospace;
   font-size: 17px;
   letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.90);
+  color: var(--text);
   outline: none;
   transition: border-color 180ms;
-  backdrop-filter: blur(6px);
 }
 
-.input::placeholder { color: rgba(255, 255, 255, 0.30); }
+.input::placeholder { color: var(--text-muted); }
 .input:focus { border-color: var(--accent); }
 
-.error { font-size: 13px; color: #f87171; }
+.error { font-size: 13px; color: #dc2626; }
 
 /* ── Waiting screen ── */
 .waiting { display: flex; flex-direction: column; gap: 14px; }
 
-.shareLabel { font-size: 14px; color: rgba(255, 255, 255, 0.55); }
+.shareLabel { font-size: 14px; color: var(--text-muted); }
 
 .codeBox {
   font-family: monospace;
@@ -121,17 +118,16 @@
   font-weight: 700;
   letter-spacing: 0.25em;
   color: var(--accent);
-  background: rgba(12, 14, 32, 0.78);
+  background: var(--surface);
   padding: 18px 28px;
   border-radius: var(--radius-md);
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border: 1.5px solid var(--border);
   display: inline-block;
-  backdrop-filter: blur(8px);
 }
 
 .waitingLabel {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -141,7 +137,7 @@
 .waitDots { display: inline-flex; gap: 3px; align-items: center; }
 .waitDots span {
   display: inline-block; width: 4px; height: 4px; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.45);
+  background: var(--text-muted);
   animation: blink 1.2s ease-in-out infinite;
 }
 .waitDots span:nth-child(2) { animation-delay: 0.2s; }
@@ -153,10 +149,7 @@
 }
 
 /* ── Match history ── */
-.empty {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.40);
-}
+.empty { font-size: 13px; color: var(--text-muted); }
 
 .history { display: flex; flex-direction: column; gap: 1px; }
 
@@ -165,8 +158,7 @@
   align-items: center;
   gap: 12px;
   padding: 13px 18px;
-  background: rgba(12, 14, 32, 0.66);
-  backdrop-filter: blur(6px);
+  background: var(--surface);
   border-radius: var(--radius-sm);
   font-size: 13px;
 }
@@ -176,18 +168,18 @@
 
 .result { font-weight: 600; min-width: 60px; }
 .result.win  { color: var(--accent); }
-.result.loss { color: rgba(255, 255, 255, 0.40); }
+.result.loss { color: var(--text-muted); }
 .result.draw { color: var(--player2); }
 
-.meta { flex: 1; color: rgba(255, 255, 255, 0.45); }
+.meta { flex: 1; color: var(--text-muted); }
 
 .replayBtn {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.40);
+  color: var(--text-muted);
   background: none;
   border: none;
   cursor: pointer;
   text-decoration: underline;
 }
 
-.replayBtn:hover { color: rgba(255, 255, 255, 0.80); }
+.replayBtn:hover { color: var(--text); }

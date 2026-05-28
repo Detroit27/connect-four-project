@@ -23,36 +23,21 @@ export const RARITY_COLORS: Record<Rarity, string> = {
 
 export const CASES: CaseDefinition[] = [
   {
-    id: 'starter',
-    nameKey: 'starterCase',
-    price: 150,
-    color: '#6F4E37',
+    id: 'grand',
+    nameKey: 'grandCase',
+    price: 750,
+    color: '#F4AE52',
+    // One case — any character skin can drop
     items: [
-      { skinId: 'cappucino', rarity: 'common', weight: 50 },
-      { skinId: 'chimp',     rarity: 'common', weight: 30 },
-      { skinId: 'ballerina', rarity: 'rare',   weight: 20 },
-    ],
-  },
-  {
-    id: 'neon',
-    nameKey: 'neonCase',
-    price: 400,
-    color: '#00BCD4',
-    items: [
-      { skinId: 'patapim', rarity: 'common', weight: 40 },
-      { skinId: 'tralala', rarity: 'rare',   weight: 35 },
-      { skinId: 'lirili',  rarity: 'epic',   weight: 25 },
-    ],
-  },
-  {
-    id: 'gold',
-    nameKey: 'goldCase',
-    price: 900,
-    color: '#F59E0B',
-    items: [
-      { skinId: 'bomba',  rarity: 'rare',      weight: 40 },
-      { skinId: 'trippi', rarity: 'epic',      weight: 35 },
-      { skinId: 'sahur',  rarity: 'legendary', weight: 25 },
+      { skinId: 'cappucino', rarity: 'common',    weight: 16 },
+      { skinId: 'chimp',     rarity: 'common',    weight: 16 },
+      { skinId: 'ballerina', rarity: 'rare',      weight: 14 },
+      { skinId: 'patapim',   rarity: 'rare',      weight: 12 },
+      { skinId: 'tralala',   rarity: 'rare',      weight: 12 },
+      { skinId: 'lirili',    rarity: 'epic',      weight: 10 },
+      { skinId: 'bomba',     rarity: 'epic',      weight: 9  },
+      { skinId: 'trippi',    rarity: 'epic',      weight: 6  },
+      { skinId: 'sahur',     rarity: 'legendary', weight: 5  },
     ],
   },
 ]

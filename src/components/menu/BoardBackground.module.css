@@ -48,16 +48,15 @@
   box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.20);
 }
 
-/* Semi-dark overlay — stronger in light mode so content stays readable */
+/* Palette-tinted overlay — cream in light, maroon in dark */
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(8, 8, 22, 0.58);
-  backdrop-filter: blur(0px);
+  background: rgba(255, 247, 197, 0.80);
 }
 
 [data-theme='dark'] .overlay {
-  background: rgba(5, 5, 18, 0.70);
+  background: rgba(79, 37, 46, 0.82);
 }
 
 @media (prefers-reduced-motion: reduce) {

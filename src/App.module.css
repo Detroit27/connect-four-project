@@ -24,10 +24,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px clamp(16px, 5vw, 40px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(6, 6, 18, 0.82);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
   position: sticky;
   top: 0;
   z-index: 5;
@@ -38,7 +36,7 @@
   font-style: italic;
   font-size: 18px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--text);
   letter-spacing: -0.02em;
 }
 

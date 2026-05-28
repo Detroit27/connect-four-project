@@ -15,4 +15,12 @@
   padding: 10px 0; border-bottom: 1px solid var(--border);
   color: var(--text);
 }
-.first td { color: var(--accent); font-weight: 500; }
+/* Current user — the only "this is you" highlight, keyed by user id */
+.me td {
+  color: var(--accent);
+  font-weight: 700;
+}
+.me td:first-child {
+  border-left: 3px solid var(--accent);
+  padding-left: 6px;
+}

@@ -57,8 +57,7 @@ export const ru: Translations = {
       bomba: 'Бомба', trippi: 'Триппи', sahur: 'Сахур',
     },
     cases: {
-      starter: 'Стартовый кейс', neon: 'Неоновый кейс', gold: 'Золотой кейс',
-      starterCase: 'Стартовый кейс', neonCase: 'Неоновый кейс', goldCase: 'Золотой кейс',
+      grand: 'Большой кейс', grandCase: 'Большой кейс',
     },
   },
   config: {

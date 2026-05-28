@@ -71,7 +71,7 @@ export function GameView() {
     else if (result === 'loss') playLoss()
     const earned = result === 'win' ? coins.win : coins.loss
     addCurrency(earned)
-    updateCurrencyOnServer(earned)
+    updateCurrencyOnServer()
     const match: SpMatch = {
       id: crypto.randomUUID(),
       difficulty,

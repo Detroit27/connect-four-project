@@ -55,8 +55,7 @@ export const en = {
       bomba: 'Bomba', trippi: 'Trippi', sahur: 'Sahur',
     },
     cases: {
-      starter: 'Starter Case', neon: 'Neon Case', gold: 'Gold Case',
-      starterCase: 'Starter Case', neonCase: 'Neon Case', goldCase: 'Gold Case',
+      grand: 'Grand Case', grandCase: 'Grand Case',
     },
   },
   config: {
