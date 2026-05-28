@@ -125,13 +125,14 @@
 }
 
 .nameDisplay:hover {
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .nameText {
   font-size: 16px;
   font-weight: 700;
-  color: var(--text);
+  /* Sits directly on the dark animated backdrop, so it stays light in both themes */
+  color: #FFF7C5;
   letter-spacing: 0.01em;
 }
 
@@ -208,7 +209,7 @@
   gap: 10px;
   padding: 48px 0;
   min-width: 0;
-  overflow: hidden;
+  /* no overflow:hidden — the left edge must stay visible while a tile slides on hover */
 }
 
 /* ── Mobile ───────────────────────────────── */

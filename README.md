@@ -1,73 +1,98 @@
-# React + TypeScript + Vite
+# Connect Four — «Четыре в ряд»
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Современная веб-реализация классической игры «Четыре в ряд» с игрой против ИИ, полноценным онлайн-мультиплеером, магазином скинов, внутриигровой экономикой и системой кейсов.
 
-Currently, two official plugins are available:
+Приложение написано на **React + TypeScript (Vite)**, данные и аутентификация — на **Supabase**, состояние — на **Zustand**, анимации — на **Framer Motion**. Проект задеплоен на **Vercel**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Краткое описание
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+При открытии сайта пользователя встречает главное меню с анимированным фоном — игровое поле, по которому одна за другой падают фишки. В главном меню доступны пять вкладок:
 
-## Expanding the ESLint configuration
+- **Singleplayer**
+- **Multiplayer**
+- **Shop**
+- **Config**
+- **About**
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Слева в меню находится аватар — это ваш текущий (надетый) скин. По клику на него открывается список купленных скинов, среди которых можно выбрать активный. Под аватаром отображается ваше имя.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Вкладки
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Singleplayer
+
+Одиночная игра против ИИ-оппонента — базовая реализация задачи. Доступны **четыре уровня сложности**: Easy, Medium, Hard и Extra Hard (от случайных ходов до почти идеальной игры, реализованной алгоритмом минимакса с альфа-бета отсечением).
+
+Вспомогательные механики во время партии:
+
+- **Подсказка** — один раз за партию можно нажать кнопку подсказки, и лучший в данной ситуации столбец подсветится.
+- **Индикатор победного хода** — если до победы остаётся всего один ход, выигрышный столбец начинает медленно мигать жёлтым. Эта подсказка работает как в одиночной игре, так и в мультиплеере.
+
+За победы и поражения начисляются монеты, причём награда растёт вместе со сложностью.
+
+### Multiplayer
+
+Полноценный онлайн-мультиплеер. Доступен только после **регистрации и входа** в аккаунт. Чтобы сыграть, нужно создать комнату и отправить её код другу — он заходит по коду, после чего начинается партия.
+
+- Состояние игры синхронизируется между игроками в реальном времени (Supabase Realtime) с резервным опросом сервера на случай, если веб-сокеты недоступны.
+- Во время матча видно имя соперника, чей сейчас ход и индикатор «соперник думает».
+- При победе проигрывается звук и запускается конфетти; при поражении — соответствующий звук.
+- Можно сдаться (forfeit) в любой момент.
+- Есть **таблица лидеров** по количеству побед, в которой ваша строка подсвечивается отдельно.
+
+### История матчей и повторы
+
+И в одиночной игре, и в мультиплеере сохраняется история сыгранных матчей. История **интерактивная**: любой матч можно открыть как повтор и, подобно плееру, прокручивать ходы ползунком и кнопками (в начало, шаг назад, шаг вперёд, в конец), наблюдая, как разворачивалась партия.
+
+### Shop
+
+Раздел, отвечающий за монетизацию и удержание игрока. Здесь за внутриигровые монеты можно приобретать скины для фишек.
+
+- Доступны базовые цветные скины (от бесплатного «Classic» до дорогих вариантов), а также набор **скинов-персонажей из «итальянского брейнрота»**. Это осознанное продуктовое решение: подобные персонажи привлекают молодую аудиторию (до ~16 лет) — по аналогии с тем, как игра *Steal a Brainrot* в Roblox добилась финансового успеха именно за счёт этой эстетики.
+- Реализован элемент внутриигровой экономики, который используют многие коммерчески успешные игры — **кейсы**. В магазине есть «Grand Case» (750 монет), из которого с разной вероятностью (по редкости) может выпасть любой из скинов-персонажей. Открытие кейса сопровождается анимацией; за повторно выпавший скин возвращается 50% стоимости кейса.
+
+Магазин предназначен **только для приобретения** скинов — выбор активного скина происходит через аватар в главном меню.
+
+### Config
+
+Вкладка настроек. Здесь можно:
+
+- переключать **тему оформления** — светлую и тёмную (палитра: кремовый, тёмно-бордовый и янтарный акцент);
+- менять **язык интерфейса** — английский или русский;
+- управлять аккаунтом — войти или выйти.
+
+### About
+
+Информационная вкладка: краткое описание проекта, правила игры «Четыре в ряд» и использованные технологии.
+
+---
+
+## Стек технологий
+
+- **React 19 + TypeScript** — интерфейс
+- **Vite** — сборка и dev-сервер
+- **Supabase** — аутентификация, база данных и синхронизация в реальном времени
+- **Zustand** — управление состоянием
+- **Framer Motion** — анимации
+- **Web Audio API** — звуковые эффекты
+- **Vercel** — хостинг
+
+---
+
+## Локальный запуск
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Для работы аутентификации и мультиплеера нужны переменные окружения Supabase (`VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`) в файле `.env`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Сборка production-версии:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
