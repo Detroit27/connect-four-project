@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useGameStore } from '../store/gameStore'
 import { useT } from '../i18n'
-import { createRoom, joinRoom, getMpHistory, getActiveRoom, forfeitRoom } from '../lib/multiplayer'
+import { createRoom, joinRoom, getMpHistory, getActiveRoom, forfeitRoom, subscribeToRoom } from '../lib/multiplayer'
 import { supabase } from '../lib/supabase'
 import { MultiplayerGame } from '../components/multiplayer/MultiplayerGame'
 import { Leaderboard } from '../components/multiplayer/Leaderboard'
@@ -39,27 +39,37 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     })
   }, [user])
 
-  // ── Reliable polling: detect opponent joining while on waiting screen ──
-  // This replaces the inline setInterval that was easily lost on re-renders.
+  // ── Detect the opponent joining while the host is on the waiting screen ──
+  // Belt-and-suspenders: Realtime subscription (instant, if enabled on the table)
+  // AND a REST poll fallback (works even if Realtime is off). Either one fires.
   useEffect(() => {
     if (mpScreen !== 'waiting' || !room) return
+    const code = room.code
+    let entered = false
 
+    const enterGame = (data: any) => {
+      if (entered || !data?.guest_id) return
+      entered = true
+      console.log('[MP] opponent joined, starting match', code)
+      setRoom(data as Room)
+      setActiveRoom(null)
+      setMpScreen('game')
+    }
+
+    // 1) Realtime push
+    const channel = subscribeToRoom(code, (r) => enterGame(r))
+
+    // 2) Polling fallback every 1.5s
     const poll = setInterval(async () => {
       try {
-        const { data } = await supabase
-          .from('mp_rooms')
-          .select()
-          .eq('code', room.code)
-          .maybeSingle() as any
-        if (data?.guest_id) {
-          setRoom(data as Room)
-          setActiveRoom(null)
-          setMpScreen('game')
-        }
-      } catch { /* silent */ }
-    }, 2000)
+        const { data, error } = await supabase
+          .from('mp_rooms').select().eq('code', code).maybeSingle()
+        if (error) { console.error('[MP] waiting poll error:', error); return }
+        enterGame(data)
+      } catch (e) { console.error('[MP] waiting poll threw:', e) }
+    }, 1500)
 
-    return () => clearInterval(poll)
+    return () => { channel.unsubscribe(); clearInterval(poll) }
   }, [mpScreen, room?.code])   // re-runs when entering/leaving waiting state
 
   if (!user) {
