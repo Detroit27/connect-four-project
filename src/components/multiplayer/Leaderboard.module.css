@@ -1,0 +1,18 @@
+.container { display: flex; flex-direction: column; gap: 14px; }
+.title {
+  font-family: var(--font-serif); font-size: 17px; font-weight: 600; color: var(--text);
+}
+.empty { font-size: 13px; color: var(--text-muted); }
+.table {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+}
+.table th {
+  text-align: left; font-size: 11px; font-weight: 500;
+  color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0 0 8px; border-bottom: 1px solid var(--border);
+}
+.table td {
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.first td { color: var(--accent); font-weight: 500; }

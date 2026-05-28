@@ -1,0 +1,27 @@
+.container {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 28px;
+  padding: 32px clamp(12px, 4vw, 32px);
+  min-height: 100%;
+}
+.header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  width: 100%; max-width: 540px;
+}
+.status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; color: var(--text-muted);
+}
+.dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.dot.p1 { background: var(--player1); }
+.dot.p2 { background: var(--player2); }
+.result {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.coins {
+  font-size: 13px; color: var(--accent); font-weight: 500;
+}
+.actions { display: flex; gap: 10px; }

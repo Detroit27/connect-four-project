@@ -1,122 +1,100 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import type { Transition } from 'framer-motion'
+import { useGameStore } from './store/gameStore'
+import { useAuthStore } from './store/authStore'
+import { useShopStore } from './store/shopStore'
+import { getSkin, applySkinVars } from './lib/skins'
+import { MainMenu } from './components/menu/MainMenu'
+import { AuthModal } from './components/ui/AuthModal'
+import { GameView } from './components/game/GameView'
+import { MatchReplay } from './components/multiplayer/MatchReplay'
+import { SingleplayerView } from './views/SingleplayerView'
+import { MultiplayerView } from './views/MultiplayerView'
+import { ShopView } from './views/ShopView'
+import { ConfigView } from './views/ConfigView'
+import { useT } from './i18n'
+import styles from './App.module.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+const tx: Transition = { duration: 0.16, ease: 'easeOut' }
+const fade = { initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -6 } }
 
+function SubScreen({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
+  const t = useT()
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <div className={styles.subRoot}>
+      <header className={styles.subHeader}>
+        <button className="btn-ghost" onClick={onBack}>{t.common.back}</button>
+        <span className={styles.subTitle}>{title}</span>
+        <div style={{ minWidth: 80 }} />
+      </header>
+      <div className={styles.subBody}>{children}</div>
+    </div>
   )
 }
 
-export default App
+export default function App() {
+  const { screen, setScreen, theme } = useGameStore()
+  const { init } = useAuthStore()
+  const { currentSkin } = useShopStore()
+  const t = useT()
+  const [authOpen, setAuthOpen] = useState(false)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
+  useEffect(() => {
+    applySkinVars(getSkin(currentSkin))
+  }, [currentSkin])
+
+  useEffect(() => { init() }, [init])
+
+  if (screen === 'game') return <div className={styles.root}><GameView /></div>
+  if (screen === 'replay') return <div className={styles.root}><MatchReplay /></div>
+
+  if (screen === 'menu') {
+    return (
+      <div className={styles.root}>
+        <MainMenu onAuthClick={() => setAuthOpen(true)} />
+        {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
+      </div>
+    )
+  }
+
+  return (
+    <div className={styles.root}>
+      <AnimatePresence mode="wait">
+        {screen === 'singleplayer' && (
+          <motion.div key="sp" {...fade} transition={tx} className={styles.fill}>
+            <SubScreen title={t.menu.singleplayer} onBack={() => setScreen('menu')}>
+              <SingleplayerView />
+            </SubScreen>
+          </motion.div>
+        )}
+        {screen === 'multiplayer' && (
+          <motion.div key="mp" {...fade} transition={tx} className={styles.fill}>
+            <SubScreen title={t.menu.multiplayer} onBack={() => setScreen('menu')}>
+              <MultiplayerView onAuthRequired={() => setAuthOpen(true)} />
+            </SubScreen>
+          </motion.div>
+        )}
+        {screen === 'shop' && (
+          <motion.div key="sh" {...fade} transition={tx} className={styles.fill}>
+            <SubScreen title={t.menu.shop} onBack={() => setScreen('menu')}>
+              <ShopView />
+            </SubScreen>
+          </motion.div>
+        )}
+        {screen === 'config' && (
+          <motion.div key="cfg" {...fade} transition={tx} className={styles.fill}>
+            <SubScreen title={t.menu.config} onBack={() => setScreen('menu')}>
+              <ConfigView onAuthClick={() => setAuthOpen(true)} />
+            </SubScreen>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
+    </div>
+  )
+}

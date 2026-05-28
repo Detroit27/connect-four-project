@@ -1,0 +1,38 @@
+.container {
+  display: flex; flex-direction: column; gap: 36px;
+  padding: 36px clamp(16px, 5vw, 40px);
+  max-width: 480px; margin: 0 auto; width: 100%;
+}
+.section { display: flex; flex-direction: column; gap: 12px; }
+.title {
+  font-family: var(--font-serif); font-size: 18px;
+  font-weight: 600; color: var(--text); letter-spacing: -0.01em;
+}
+.row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: var(--surface);
+  border-radius: var(--radius-md); border: 1px solid var(--border);
+}
+.rowLabel { font-size: 14px; color: var(--text); }
+.toggle {
+  display: flex; gap: 2px;
+  background: var(--surface-2); border-radius: var(--radius-full); padding: 3px;
+}
+.toggleBtn {
+  padding: 5px 14px; border-radius: var(--radius-full);
+  font-size: 13px; color: var(--text-muted);
+  background: none; border: none; cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.toggleBtn.active {
+  background: var(--bg); color: var(--text);
+  font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.empty { font-size: 13px; color: var(--text-muted); }
+.accountRow {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: var(--surface);
+  border-radius: var(--radius-md); border: 1px solid var(--border);
+}
+.signedInAs { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.username { font-size: 14px; font-weight: 500; color: var(--text); margin-top: 2px; }
