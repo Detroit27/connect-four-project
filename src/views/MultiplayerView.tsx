@@ -26,6 +26,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
   const [activeRoom, setActiveRoom] = useState<Room | null>(null)
   const [checkingActive, setCheckingActive] = useState(true)
 
+  // Load history + check for active room on mount
   useEffect(() => {
     if (!user) { setCheckingActive(false); return }
     Promise.all([
@@ -37,6 +38,29 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
       setCheckingActive(false)
     })
   }, [user])
+
+  // ── Reliable polling: detect opponent joining while on waiting screen ──
+  // This replaces the inline setInterval that was easily lost on re-renders.
+  useEffect(() => {
+    if (mpScreen !== 'waiting' || !room) return
+
+    const poll = setInterval(async () => {
+      try {
+        const { data } = await supabase
+          .from('mp_rooms')
+          .select()
+          .eq('code', room.code)
+          .maybeSingle() as any
+        if (data?.guest_id) {
+          setRoom(data as Room)
+          setActiveRoom(null)
+          setMpScreen('game')
+        }
+      } catch { /* silent */ }
+    }, 2000)
+
+    return () => clearInterval(poll)
+  }, [mpScreen, room?.code])   // re-runs when entering/leaving waiting state
 
   if (!user) {
     return (
@@ -72,19 +96,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
       setRoom(r as unknown as Room)
       setActiveRoom(r as unknown as Room)
       setMyPlayer(1)
-      setMpScreen('waiting')
-      const interval = setInterval(async () => {
-        try {
-          const { data } = await supabase
-            .from('mp_rooms').select().eq('code', r.code).maybeSingle() as any
-          if (data?.guest_id) {
-            setRoom(data as Room)
-            setActiveRoom(null)
-            setMpScreen('game')
-            clearInterval(interval)
-          }
-        } catch { /* ignore */ }
-      }, 2000)
+      setMpScreen('waiting')   // useEffect above takes over polling
     } catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
   }
@@ -108,19 +120,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     setMyPlayer(player)
     setRoom(activeRoom)
     if (activeRoom.status === 'waiting') {
-      setMpScreen('waiting')
-      const interval = setInterval(async () => {
-        try {
-          const { data } = await supabase
-            .from('mp_rooms').select().eq('code', activeRoom.code).maybeSingle() as any
-          if (data?.guest_id) {
-            setRoom(data as Room)
-            setActiveRoom(null)
-            setMpScreen('game')
-            clearInterval(interval)
-          }
-        } catch { /* ignore */ }
-      }, 2000)
+      setMpScreen('waiting')   // useEffect polling kicks in automatically
     } else {
       setActiveRoom(null)
       setMpScreen('game')
@@ -142,7 +142,6 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     } catch (e: any) { setError(e.message) }
   }
 
-  // Is the active room in a waiting state (no opponent yet)?
   const isActiveWaiting = activeRoom?.status === 'waiting'
   const activeOpponent = activeRoom
     ? (activeRoom.host_id === user.id
@@ -154,7 +153,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     <div className={styles.container}>
       <div className={styles.main}>
 
-        {/* Active / Waiting banner — only while in lobby */}
+        {/* Active / Waiting banner */}
         {!checkingActive && activeRoom && mpScreen === 'lobby' && (
           <div className={`${styles.activeBanner} ${isActiveWaiting ? styles.bannerWaiting : styles.bannerPlaying}`}>
             <div className={styles.activeBannerInfo}>

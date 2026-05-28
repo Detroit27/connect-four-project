@@ -1,5 +1,4 @@
 .root {
-  --ml-inset: clamp(36px, 7vw, 96px);
   position: relative;
   min-height: 100%;
   overflow: hidden;
@@ -9,19 +8,21 @@
   position: relative;
   z-index: 1;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 56px 48px 56px var(--ml-inset);
+  flex-direction: row;
+  align-items: stretch;
   min-height: 100vh;
-  gap: 36px;
 }
 
-/* ── Profile ─────────────────────────────── */
+/* ── Left panel: profile ─────────────────── */
 .profile {
+  width: clamp(200px, 34vw, 380px);
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px clamp(20px, 3vw, 52px);
 }
 
 .avatarWrap {
@@ -29,8 +30,8 @@
 }
 
 .avatar {
-  width: 96px;
-  height: 96px;
+  width: 148px;
+  height: 148px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -44,11 +45,11 @@
 }
 
 .avatar:hover {
-  transform: scale(1.07);
+  transform: scale(1.06);
 }
 
 .avatarEditIcon {
-  font-size: 20px;
+  font-size: 24px;
   opacity: 0;
   transition: opacity 160ms ease;
   position: absolute;
@@ -68,13 +69,13 @@
 
 .skinPicker {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  background: rgba(10, 10, 28, 0.94);
+  background: rgba(10, 8, 30, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   padding: 12px;
@@ -82,7 +83,7 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   max-width: 228px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
 
 .pickerChip {
@@ -130,14 +131,14 @@
 }
 
 .nameText {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.90);
   letter-spacing: 0.01em;
 }
 
 .nameEditHint {
-  font-size: 11px;
+  font-size: 12px;
   opacity: 0;
   transition: opacity 140ms ease;
   line-height: 1;
@@ -200,11 +201,42 @@
 
 .nameCancelBtn:hover { background: rgba(255, 255, 255, 0.18); }
 
-/* ── Nav Tiles ────────────────────────────── */
+/* ── Right panel: tiles ───────────────────── */
 .tiles {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 10px;
-  margin-left: calc(-1 * var(--ml-inset));
-  width: min(560px, 100vw);
+  padding: 48px 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Mobile ───────────────────────────────── */
+@media (max-width: 600px) {
+  .content {
+    flex-direction: column;
+  }
+
+  .profile {
+    width: 100%;
+    flex-direction: row;
+    padding: 28px 24px;
+    gap: 20px;
+    justify-content: flex-start;
+  }
+
+  .avatar {
+    width: 84px;
+    height: 84px;
+  }
+
+  .nameText { font-size: 15px; }
+
+  .tiles {
+    padding: 0 0 32px 0;
+    justify-content: flex-start;
+    gap: 8px;
+  }
 }
