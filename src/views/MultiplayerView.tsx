@@ -1,91 +1,72 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useGameStore } from '../store/gameStore'
 import { useT } from '../i18n'
-import { createRoom, joinRoom, getMpHistory, getActiveRoom, forfeitRoom, cancelRoom, subscribeToRoom } from '../lib/multiplayer'
-import { supabase } from '../lib/supabase'
+import { createRoom, joinRoom, getActiveRoom, getMpHistory, cancelRoom } from '../lib/multiplayer'
+import { useRoomChannel } from '../hooks/useRoomChannel'
 import { MultiplayerGame } from '../components/multiplayer/MultiplayerGame'
 import { Leaderboard } from '../components/multiplayer/Leaderboard'
-import type { Room, MpMatch, Player } from '../types'
+import type { Room, MpMatch } from '../types'
 import styles from './MultiplayerView.module.css'
 
-type MPScreen = 'lobby' | 'waiting' | 'game'
+// Status can only ever move forward; this stops a stale snapshot from
+// reverting playing→waiting or finished→playing.
+const STATUS_RANK: Record<Room['status'], number> = {
+  waiting: 0, playing: 1, finished: 2, cancelled: 2,
+}
 
 export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void }) {
   const t = useT()
   const { user, profile } = useAuthStore()
   const { setReplayMatch } = useGameStore()
 
-  const [mpScreen, setMpScreen]     = useState<MPScreen>('lobby')
-  const [joinCode, setJoinCode]     = useState('')
-  const [room, setRoom]             = useState<Room | null>(null)
-  const [myPlayer, setMyPlayer]     = useState<Player>(1)
-  const [error, setError]           = useState('')
-  const [loading, setLoading]       = useState(false)
-  const [history, setHistory]       = useState<MpMatch[]>([])
-  const [activeRoom, setActiveRoom] = useState<Room | null>(null)
-  const [checkingActive, setCheckingActive] = useState(true)
+  const [room, setRoom]       = useState<Room | null>(null)
+  const [joinCode, setJoinCode] = useState('')
+  const [error, setError]     = useState('')
+  const [loading, setLoading] = useState(false)
+  const [history, setHistory] = useState<MpMatch[]>([])
+  const [checking, setChecking] = useState(true)
 
-  // Load history + check for active room on mount
+  // Merge a server snapshot into our room without ever going backwards.
+  const mergeRoom = useCallback((incoming: Room) => {
+    setRoom(prev => {
+      if (!prev || prev.code !== incoming.code) return incoming
+      if (incoming.status === 'finished' || incoming.status === 'cancelled') return incoming
+      if (STATUS_RANK[incoming.status] < STATUS_RANK[prev.status]) return prev
+      if (incoming.moves.length < prev.moves.length) return prev
+      return incoming
+    })
+  }, [])
+
+  // On mount: load history and resume any in-progress room
   useEffect(() => {
-    if (!user) { setCheckingActive(false); return }
+    if (!user) { setChecking(false); return }
+    let alive = true
     Promise.all([
       getMpHistory(user.id).catch(() => []),
       getActiveRoom(user.id).catch(() => null),
-    ]).then(([hist, active]) => {
-      setHistory(hist as MpMatch[])
-      setActiveRoom(active as Room | null)
-      setCheckingActive(false)
+    ]).then(([h, active]) => {
+      if (!alive) return
+      setHistory(h as MpMatch[])
+      if (active) setRoom(active as Room)
+      setChecking(false)
     })
+    return () => { alive = false }
   }, [user])
 
-  const waitingCode = mpScreen === 'waiting'
-    ? (room?.code ?? activeRoom?.code ?? null)
-    : null
+  // Keep the current room synced (waiting OR playing) — one channel for everything
+  useRoomChannel(room?.code ?? null, mergeRoom)
 
-  // Detect the opponent joining while the host is on the waiting screen.
-  // Realtime is instant when Supabase delivers it; polling is the reliable fallback.
+  // A cancelled room drops us back to the lobby
   useEffect(() => {
-    if (!waitingCode || !user) return
-    let stopped = false
+    if (room?.status === 'cancelled') setRoom(null)
+  }, [room?.status])
 
-    const enterGame = (data: any) => {
-      if (stopped || !data?.guest_id || data.status !== 'playing') return
-      console.log('[MP] opponent joined, starting match', waitingCode)
-      setMyPlayer(data.host_id === user.id ? 1 : 2)
-      setRoom(data as Room)
-      setActiveRoom(null)
-      setError('')
-      setMpScreen('game')
-    }
+  const refreshHistory = useCallback(() => {
+    if (user) getMpHistory(user.id).then(d => setHistory(d as MpMatch[])).catch(() => {})
+  }, [user])
 
-    const sync = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('mp_rooms').select().eq('code', waitingCode).maybeSingle()
-        if (error) { console.error('[MP] waiting poll error:', error); return }
-        enterGame(data)
-      } catch (e) { console.error('[MP] waiting poll threw:', e) }
-    }
-
-    const channel = subscribeToRoom(waitingCode, (r) => enterGame(r))
-    sync()
-    const poll = setInterval(sync, 750)
-
-    // Background tabs throttle setInterval, so re-check the moment we're focused again
-    const onWake = () => { if (!document.hidden) sync() }
-    window.addEventListener('focus', onWake)
-    document.addEventListener('visibilitychange', onWake)
-
-    return () => {
-      stopped = true
-      channel.unsubscribe()
-      clearInterval(poll)
-      window.removeEventListener('focus', onWake)
-      document.removeEventListener('visibilitychange', onWake)
-    }
-  }, [waitingCode, user?.id])
-
+  // ── Auth gate ──
   if (!user) {
     return (
       <div className={styles.authWall}>
@@ -95,34 +76,30 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     )
   }
 
-  if (mpScreen === 'game' && room) {
+  const myUsername = profile?.username ?? user.email ?? 'You'
+  const inWaiting  = room && room.status === 'waiting'
+  const inGame     = room && (room.status === 'playing' || room.status === 'finished')
+
+  // ── In an active/finished game: hand off to the game component ──
+  if (inGame && room) {
     return (
       <MultiplayerGame
-        roomCode={room.code}
-        initialBoard={room.board}
-        initialMoves={room.moves ?? []}
-        initialCurrentPlayer={room.current_player}
-        myPlayer={myPlayer}
-        opponentUsername={myPlayer === 1 ? (room.guest_username ?? '?') : room.host_username}
-        onExit={() => {
-          setRoom(null)
-          setActiveRoom(null)
-          setMpScreen('lobby')
-          if (user) getMpHistory(user.id).then(d => setHistory(d as MpMatch[])).catch(() => {})
-        }}
+        room={room}
+        myId={user.id}
+        myUsername={myUsername}
+        setRoom={setRoom}
+        onExit={() => { setRoom(null); refreshHistory() }}
       />
     )
   }
 
+  // ── Lobby actions ──
   const handleCreate = async () => {
     setLoading(true); setError('')
     try {
-      const r = await createRoom(user.id, profile?.username ?? user.email ?? 'Host')
-      setRoom(r as unknown as Room)
-      setActiveRoom(r as unknown as Room)
-      setMyPlayer(1)
-      setMpScreen('waiting')   // useEffect above takes over polling
-    } catch (e: any) { setError(e.message) }
+      const r = await createRoom(user.id, myUsername)
+      setRoom(r)
+    } catch (e: any) { console.error('[MP] create failed:', e); setError(e.message) }
     finally { setLoading(false) }
   }
 
@@ -130,88 +107,29 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     if (!joinCode.trim()) return
     setLoading(true); setError('')
     try {
-      const r = await joinRoom(joinCode.trim(), user.id, profile?.username ?? user.email ?? 'Guest')
-      setRoom(r as unknown as Room)
-      setActiveRoom(null)
-      setMyPlayer(2)
-      setMpScreen('game')
+      const r = await joinRoom(joinCode.trim(), user.id, myUsername)
+      setJoinCode('')
+      setRoom(r)
     } catch (e: any) { console.error('[MP] join failed:', e); setError(e.message) }
     finally { setLoading(false) }
   }
 
-  const handleResume = () => {
-    if (!activeRoom) return
-    const player: Player = activeRoom.host_id === user.id ? 1 : 2
-    setMyPlayer(player)
-    setRoom(activeRoom)
-    if (activeRoom.status === 'waiting') {
-      setMpScreen('waiting')   // useEffect polling kicks in automatically
-    } else {
-      setActiveRoom(null)
-      setMpScreen('game')
-    }
+  const handleCancel = () => {
+    const code = room?.code
+    setRoom(null)
+    if (code) cancelRoom(code).catch(e => console.error('[MP] cancel failed:', e))
   }
-
-  const handleCancelWaiting = () => {
-    // Works both on the live waiting screen (room set) AND from the lobby banner
-    // after a reload (only activeRoom is set, room is null).
-    const code = room?.code ?? activeRoom?.code
-    if (!code) return
-    // Update the UI immediately so Cancel always responds, then cancel the waiting room.
-    setRoom(null); setActiveRoom(null); setMpScreen('lobby')
-    cancelRoom(code).catch(e => console.error('[MP] cancel room failed:', e))
-  }
-
-  const handleForfeitActive = async () => {
-    if (!activeRoom || !window.confirm(t.multiplayer.forfeitConfirm)) return
-    const player: Player = activeRoom.host_id === user.id ? 1 : 2
-    try {
-      await forfeitRoom(activeRoom.code, player)
-      setActiveRoom(null)
-    } catch (e: any) { setError(e.message) }
-  }
-
-  const isActiveWaiting = activeRoom?.status === 'waiting'
-  const activeOpponent = activeRoom
-    ? (activeRoom.host_id === user.id
-        ? (activeRoom.guest_username ?? null)
-        : activeRoom.host_username)
-    : null
 
   return (
     <div className={styles.container}>
       <div className={styles.main}>
-
-        {/* Active / Waiting banner */}
-        {!checkingActive && activeRoom && mpScreen === 'lobby' && (
-          <div className={`${styles.activeBanner} ${isActiveWaiting ? styles.bannerWaiting : styles.bannerPlaying}`}>
-            <div className={styles.activeBannerInfo}>
-              <span className={styles.activeBannerTitle}>
-                {isActiveWaiting
-                  ? t.multiplayer.waitingMatch
-                  : activeOpponent
-                    ? `${t.multiplayer.activeMatch} vs ${activeOpponent}`
-                    : t.multiplayer.activeMatch}
-              </span>
-              <span className={styles.activeBannerCode}>
-                {t.multiplayer.activeCode}: <b>{activeRoom.code}</b>
-              </span>
-            </div>
-            <div className={styles.activeBannerActions}>
-              {!isActiveWaiting && (
-                <button className="btn-primary" onClick={handleResume}>{t.multiplayer.resume}</button>
-              )}
-              <button className="btn-ghost" onClick={isActiveWaiting ? handleCancelWaiting : handleForfeitActive}>
-                {isActiveWaiting ? t.multiplayer.cancelWait : t.multiplayer.forfeit}
-              </button>
-            </div>
-          </div>
-        )}
-
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>{t.multiplayer.title}</h2>
 
-          {mpScreen === 'waiting' && room ? (
+          {checking ? (
+            <p className={styles.empty}>{t.common.loading}</p>
+          ) : inWaiting && room ? (
+            // ── Waiting for opponent ──
             <div className={styles.waiting}>
               <p className={styles.shareLabel}>{t.multiplayer.shareCode}</p>
               <div className={styles.codeBox}>{room.code}</div>
@@ -219,13 +137,12 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
                 {t.multiplayer.waitingForOpponent}
                 <span className={styles.waitDots}><span /><span /><span /></span>
               </p>
-              <button className="btn-ghost" style={{ marginTop: 8 }} onClick={handleCancelWaiting}>
+              <button className="btn-ghost" style={{ marginTop: 8 }} onClick={handleCancel}>
                 {t.multiplayer.cancelWait}
               </button>
             </div>
-          ) : checkingActive ? (
-            <p className={styles.empty}>{t.common.loading}</p>
-          ) : !activeRoom ? (
+          ) : (
+            // ── Lobby: create or join ──
             <div className={styles.lobbyActions}>
               <button className={`btn-primary ${styles.bigBtn}`} onClick={handleCreate} disabled={loading}>
                 {t.multiplayer.createRoom}
@@ -245,7 +162,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
               </div>
               {error && <p className={styles.error}>{error}</p>}
             </div>
-          ) : null}
+          )}
         </div>
 
         {/* Match history */}
