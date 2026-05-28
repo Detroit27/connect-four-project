@@ -127,10 +127,14 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     }
   }
 
-  const handleCancelWaiting = async () => {
-    if (!room) return
-    await forfeitRoom(room.code, 1).catch(() => {})
+  const handleCancelWaiting = () => {
+    // Works both on the live waiting screen (room set) AND from the lobby banner
+    // after a reload (only activeRoom is set, room is null).
+    const code = room?.code ?? activeRoom?.code
+    if (!code) return
+    // Update the UI immediately so Cancel always responds, then release the room.
     setRoom(null); setActiveRoom(null); setMpScreen('lobby')
+    forfeitRoom(code, 1).catch(() => {})
   }
 
   const handleForfeitActive = async () => {
