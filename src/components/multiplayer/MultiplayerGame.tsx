@@ -20,60 +20,72 @@ interface Props {
   myPlayer: Player
   myUsername: string
   opponentUsername: string
-  onExit: () => void
+  /** Back button pressed while game is still active — go to lobby, keep room alive */
+  onLeave: () => void
+  /** Main menu pressed after game ends — clear everything */
+  onFinished: () => void
 }
 
 const WIN_COINS  = 80
 const LOSS_COINS = 15
 
 export function MultiplayerGame({
-  roomCode, initialBoard, initialMoves, myPlayer, myUsername, opponentUsername, onExit,
+  roomCode, initialBoard, initialMoves,
+  myPlayer, myUsername, opponentUsername,
+  onLeave, onFinished,
 }: Props) {
   const t = useT()
-  const { addCurrency } = useShopStore()
+  const { addCurrency }                            = useShopStore()
   const { user, updateCurrencyOnServer, loadProfile } = useAuthStore()
-  const { setReplayMatch } = useGameStore()
+  const { setReplayMatch }                         = useGameStore()
 
-  const [board, setBoard]                   = useState<BoardType>(initialBoard)
-  const [moves, setMoves]                   = useState<number[]>(initialMoves)
-  const [currentPlayer, setCurrentPlayer]   = useState<Player>(1)
-  const [winInfo, setWinInfo]               = useState<WinInfo | null>(null)
-  const [isDraw, setIsDraw]                 = useState(false)
-  const [forfeitWinner, setForfeitWinner]   = useState<Player | null>(null)
-  const [syncError, setSyncError]           = useState(false)
+  // ── Local game state (self-contained, no parent dependency) ──
+  const [board, setBoard]                 = useState<BoardType>(initialBoard)
+  const [moves, setMoves]                 = useState<number[]>(initialMoves)
+  const [currentPlayer, setCurrentPlayer] = useState<Player>(1)
+  const [winInfo, setWinInfo]             = useState<WinInfo | null>(null)
+  const [isDraw, setIsDraw]               = useState(false)
+  const [forfeitWinner, setForfeitWinner] = useState<Player | null>(null)
+  const [syncError, setSyncError]         = useState(false)
 
-  const settledRef  = useRef(false)
-  const movesRef    = useRef(moves)
-  movesRef.current  = moves
+  const settledRef = useRef(false)
+  // Always-current snapshot of moves length — readable inside async callbacks
+  const movesLenRef = useRef(moves.length)
+  movesLenRef.current = moves.length
 
   const ended    = !!(winInfo || isDraw || forfeitWinner)
   const isMyTurn = currentPlayer === myPlayer && !ended
   const blinkCol = isMyTurn ? getWinningMove(board, myPlayer) : null
 
   const myResult: 'win' | 'loss' | 'draw' | null =
-    !ended       ? null
-    : isDraw     ? 'draw'
-    : winInfo    ? (winInfo.winner === myPlayer ? 'win' : 'loss')
-    : forfeitWinner ? (forfeitWinner === myPlayer ? 'win' : 'loss')
+    !ended         ? null
+    : isDraw       ? 'draw'
+    : winInfo      ? (winInfo.winner === myPlayer ? 'win' : 'loss')
+    : forfeitWinner ? (forfeitWinner === myPlayer  ? 'win' : 'loss')
     : null
 
-  const wasForfeit = !!forfeitWinner
-
-  // Apply a snapshot from server — only move state FORWARD, never backward
+  // ── Apply a server snapshot — only advance state, never rewind ──────────
   const applySnapshot = (row: ReturnType<typeof normalizeRoom>) => {
-    if (row.moves.length > movesRef.current.length) {
+    // New moves from opponent
+    if (row.moves.length > movesLenRef.current) {
       setBoard(row.board)
       setMoves(row.moves)
       setCurrentPlayer(row.current_player)
+      movesLenRef.current = row.moves.length
+
       const win = checkWin(row.board)
       if (win)                    { setWinInfo(win); return }
       if (isBoardFull(row.board)) { setIsDraw(true); return }
     }
+
+    // Game finished server-side (forfeit or double-check on win/draw)
     if (row.status === 'finished') {
       const win = checkWin(row.board)
       if (win) {
-        if (row.moves.length >= movesRef.current.length) {
+        // Ensure board reflects the winning position
+        if (row.moves.length >= movesLenRef.current) {
           setBoard(row.board); setMoves(row.moves); setCurrentPlayer(row.current_player)
+          movesLenRef.current = row.moves.length
         }
         setWinInfo(win)
       } else if (row.winner === 0) {
@@ -84,7 +96,7 @@ export function MultiplayerGame({
     }
   }
 
-  // Realtime subscription + 1.5s polling fallback
+  // ── Realtime subscription + polling fallback ─────────────────────────
   useEffect(() => {
     let stopped = false
 
@@ -92,19 +104,25 @@ export function MultiplayerGame({
       .channel(`room-${roomCode}-${Date.now()}`)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'mp_rooms', filter: `code=eq.${roomCode}` },
+        {
+          event:  'UPDATE',
+          schema: 'public',
+          table:  'mp_rooms',
+          filter: `code=eq.${roomCode}`,
+        },
         payload => {
           if (!stopped) applySnapshot(normalizeRoom(payload.new as Record<string, unknown>))
         },
       )
       .subscribe()
 
+    // 1.5 s polling — catches Realtime misses without hammering the DB
     const timer = setInterval(async () => {
       if (stopped) return
       try {
         const room = await getRoomByCode(roomCode)
         if (room && !stopped) applySnapshot(room)
-      } catch { /* network hiccup — next tick will retry */ }
+      } catch { /* network hiccup — next tick retries */ }
     }, 1500)
 
     return () => {
@@ -114,7 +132,7 @@ export function MultiplayerGame({
     }
   }, [roomCode])
 
-  // Settle once when game ends: coins, sound, leaderboard, history
+  // ── Settle once when the game ends ──────────────────────────────────
   useEffect(() => {
     if (!ended || settledRef.current || !user) return
     settledRef.current = true
@@ -124,15 +142,19 @@ export function MultiplayerGame({
     addCurrency(coins)
     updateCurrencyOnServer()
 
-    if (result === 'win') playWin()
+    if (result === 'win')       playWin()
     else if (result === 'loss') playLoss()
 
     if (result === 'win') {
       ;(async () => {
         try {
-          const { data } = await supabase.from('profiles').select('mp_wins').eq('id', user.id).single()
+          const { data } = await supabase
+            .from('profiles').select('mp_wins').eq('id', user.id).single()
           if (data) {
-            await supabase.from('profiles').update({ mp_wins: (data.mp_wins ?? 0) + 1 }).eq('id', user.id)
+            await supabase
+              .from('profiles')
+              .update({ mp_wins: (data.mp_wins ?? 0) + 1 })
+              .eq('id', user.id)
             await loadProfile(user.id)
           }
         } catch { /* non-critical */ }
@@ -143,19 +165,19 @@ export function MultiplayerGame({
       .catch(() => {})
   }, [ended]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Make a move: update local state immediately, then persist
+  // ── Make a move ──────────────────────────────────────────────────────
   const handleColumn = async (col: number) => {
     if (!isMyTurn) return
     const next = dropChip(board, col, myPlayer)
     if (!next) return
     playClick()
 
-    const newMoves              = [...moves, col]
-    const nextPlayer: Player    = myPlayer === 1 ? 2 : 1
-    const win                   = checkWin(next)
-    const full                  = !win && isBoardFull(next)
+    const newMoves           = [...moves, col]
+    const nextPlayer: Player = myPlayer === 1 ? 2 : 1
+    const win                = checkWin(next)
+    const full               = !win && isBoardFull(next)
 
-    // Capture pre-move state for rollback
+    // Save pre-move values for rollback
     const prevBoard = board
     const prevMoves = moves
 
@@ -163,46 +185,59 @@ export function MultiplayerGame({
     setBoard(next)
     setMoves(newMoves)
     setCurrentPlayer(nextPlayer)
+    movesLenRef.current = newMoves.length
     if (win)  setWinInfo(win)
     if (full) setIsDraw(true)
     setSyncError(false)
 
     try {
-      await applyMove(roomCode, next, newMoves, nextPlayer, !!(win || full), win ? win.winner : full ? 0 : null)
+      await applyMove(
+        roomCode, next, newMoves, nextPlayer,
+        !!(win || full),
+        win ? win.winner : full ? 0 : null,
+      )
     } catch (e) {
-      console.error('[MP] move failed, rolling back:', e)
-      setSyncError(true)
+      console.error('[MP] move write failed, rolling back:', e)
+      // Roll back optimistic update so the player can retry
       setBoard(prevBoard)
       setMoves(prevMoves)
       setCurrentPlayer(myPlayer)
+      movesLenRef.current = prevMoves.length
       if (win)  setWinInfo(null)
       if (full) setIsDraw(false)
+      setSyncError(true)
     }
   }
 
+  // ── Forfeit ──────────────────────────────────────────────────────────
   const handleForfeit = async () => {
     if (ended || !window.confirm(t.multiplayer.forfeitConfirm)) return
     const winner: Player = myPlayer === 1 ? 2 : 1
     setForfeitWinner(winner)
-    try { await forfeitRoom(roomCode, myPlayer) } catch { /* best-effort */ }
+    try { await forfeitRoom(roomCode, myPlayer) } catch { /* best effort */ }
   }
 
+  // ── Replay ───────────────────────────────────────────────────────────
   const openReplay = () => {
     const match: MpMatch = {
-      id: roomCode, roomCode, opponentUsername,
-      result: myResult ?? 'draw',
-      moves, playedAt: new Date().toISOString(),
+      id:               roomCode,
+      roomCode,
+      opponentUsername,
+      result:    myResult ?? 'draw',
+      moves,
+      playedAt:  new Date().toISOString(),
     }
     setReplayMatch(match)
   }
 
+  // ── Render ───────────────────────────────────────────────────────────
   return (
     <div className={styles.container}>
       {myResult === 'win' && <Confetti />}
 
       {/* Header */}
       <div className={styles.header}>
-        <button className="btn-ghost" onClick={onExit}>{t.common.back}</button>
+        <button className="btn-ghost" onClick={onLeave}>{t.common.back}</button>
 
         <div className={styles.versus}>
           <div className={`${styles.playerLabel} ${currentPlayer === myPlayer && !ended ? styles.activePlayer : ''}`}>
@@ -219,7 +254,9 @@ export function MultiplayerGame({
         <div className={styles.headerRight}>
           <span className={styles.code}>{roomCode}</span>
           {!ended && (
-            <button className={styles.forfeitBtn} onClick={handleForfeit}>{t.multiplayer.forfeit}</button>
+            <button className={styles.forfeitBtn} onClick={handleForfeit}>
+              {t.multiplayer.forfeit}
+            </button>
           )}
         </div>
       </div>
@@ -257,8 +294,12 @@ export function MultiplayerGame({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25, duration: 0.4 }}
           >
-            <p className={`${styles.resultText} ${myResult === 'win' ? styles.win : myResult === 'loss' ? styles.loss : styles.draw}`}>
-              {wasForfeit
+            <p className={`${styles.resultText} ${
+              myResult === 'win' ? styles.win
+              : myResult === 'loss' ? styles.loss
+              : styles.draw
+            }`}>
+              {forfeitWinner
                 ? (myResult === 'win' ? t.multiplayer.opponentForfeit : t.multiplayer.youForfeit)
                 : myResult === 'win'  ? t.multiplayer.youWin
                 : myResult === 'loss' ? t.multiplayer.opponentWins
@@ -272,8 +313,12 @@ export function MultiplayerGame({
             )}
 
             <div className={styles.actions}>
-              <button className="btn-ghost" onClick={openReplay}>{t.multiplayer.viewReplay}</button>
-              <button className="btn-primary" onClick={onExit}>{t.multiplayer.mainMenu}</button>
+              <button className="btn-ghost" onClick={openReplay}>
+                {t.multiplayer.viewReplay}
+              </button>
+              <button className="btn-primary" onClick={onFinished}>
+                {t.multiplayer.mainMenu}
+              </button>
             </div>
           </motion.div>
         )}

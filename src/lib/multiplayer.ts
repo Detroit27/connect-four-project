@@ -2,11 +2,10 @@ import { supabase } from './supabase'
 import type { Board, Player, Room } from '../types'
 import { createBoard } from './gameLogic'
 
-/* ────────────────────────────────────────────────────────────────────────
-   Normalisation — Supabase can hand back jsonb as objects OR strings, and
-   numeric columns as numbers OR strings depending on transport (REST vs
-   realtime). Everything funnels through normalizeRoom so the rest of the app
-   always works with a clean, typed Room.
+/* ─────────────────────────── Normalisation ──────────────────────────────
+   Supabase can return jsonb as objects or strings and numbers as strings
+   depending on REST vs Realtime transport. Everything funnels here so the
+   rest of the app always works with a clean typed Room.
    ──────────────────────────────────────────────────────────────────────── */
 function asBoard(v: unknown): Board {
   if (Array.isArray(v)) return v as Board
@@ -16,7 +15,9 @@ function asBoard(v: unknown): Board {
 
 function asMoves(v: unknown): number[] {
   if (Array.isArray(v)) return v as number[]
-  if (typeof v === 'string') { try { const p = JSON.parse(v); return Array.isArray(p) ? p : [] } catch { /* ignore */ } }
+  if (typeof v === 'string') {
+    try { const p = JSON.parse(v); return Array.isArray(p) ? p : [] } catch { /* ignore */ }
+  }
   return []
 }
 
@@ -24,20 +25,20 @@ export function normalizeRoom(row: Record<string, unknown>): Room {
   return {
     id:             String(row.id ?? ''),
     code:           String(row.code ?? ''),
-    host_id:        (row.host_id as string) ?? '',
+    host_id:        String(row.host_id ?? ''),
     guest_id:       (row.guest_id as string) ?? null,
-    host_username:  (row.host_username as string) ?? 'Host',
+    host_username:  String(row.host_username ?? 'Host'),
     guest_username: (row.guest_username as string) ?? null,
     board:          asBoard(row.board),
     moves:          asMoves(row.moves),
     current_player: Number(row.current_player) === 2 ? 2 : 1,
-    status:         ((row.status as Room['status']) ?? 'waiting'),
+    status:         (row.status as Room['status']) ?? 'waiting',
     winner:         row.winner == null ? null : Number(row.winner),
   }
 }
 
-/* ──────────────────────────────── Rooms ──────────────────────────────── */
-export function generateCode(): string {
+/* ────────────────────────────── Rooms ───────────────────────────────── */
+function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
@@ -48,12 +49,12 @@ export async function createRoom(hostId: string, hostUsername: string): Promise<
     .from('mp_rooms')
     .insert({
       code,
-      host_id: hostId,
+      host_id:      hostId,
       host_username: hostUsername,
-      board: createBoard(),
-      moves: [],
+      board:         createBoard(),
+      moves:         [],
       current_player: 1,
-      status: 'waiting',
+      status:        'waiting',
     })
     .select()
     .single()
@@ -61,16 +62,23 @@ export async function createRoom(hostId: string, hostUsername: string): Promise<
   return normalizeRoom(data)
 }
 
-export async function joinRoom(code: string, guestId: string, guestUsername: string): Promise<Room> {
+export async function joinRoom(
+  code: string,
+  guestId: string,
+  guestUsername: string,
+): Promise<Room> {
   const upper = code.trim().toUpperCase()
-  const { data: room, error: fetchErr } = await supabase
+
+  // Read first so we can give a clear error to the user
+  const { data: existing, error: fetchErr } = await supabase
     .from('mp_rooms').select().eq('code', upper).maybeSingle()
   if (fetchErr) throw new Error(fetchErr.message)
-  if (!room) throw new Error('Room not found. Check the code and try again.')
-  if (room.status !== 'waiting') throw new Error('That room is already full or finished.')
-  if (room.host_id === guestId) throw new Error('You cannot join your own room.')
+  if (!existing)                     throw new Error('Room not found. Check the code and try again.')
+  if (existing.status !== 'waiting') throw new Error('That room is no longer open.')
+  if (existing.host_id === guestId)  throw new Error('You cannot join your own room.')
 
-  // .eq('status','waiting') guards against two people joining the same room
+  // Atomic update — the extra .eq('status','waiting') prevents two guests
+  // joining simultaneously: the second update finds 0 rows and throws.
   const { data, error } = await supabase
     .from('mp_rooms')
     .update({ guest_id: guestId, guest_username: guestUsername, status: 'playing' })
@@ -78,7 +86,8 @@ export async function joinRoom(code: string, guestId: string, guestUsername: str
     .eq('status', 'waiting')
     .select()
   if (error) throw new Error(error.message)
-  if (!data || data.length === 0) throw new Error('Could not join — the room was just taken or closed.')
+  if (!data || data.length === 0)
+    throw new Error('Room was just taken by someone else. Try another code.')
   return normalizeRoom(data[0])
 }
 
@@ -89,6 +98,7 @@ export async function getRoomByCode(code: string): Promise<Room | null> {
   return data ? normalizeRoom(data) : null
 }
 
+/** Returns the user's most recent room that is still waiting or playing. */
 export async function getActiveRoom(userId: string): Promise<Room | null> {
   const { data, error } = await supabase
     .from('mp_rooms')
@@ -103,9 +113,8 @@ export async function getActiveRoom(userId: string): Promise<Room | null> {
 }
 
 /**
- * Persist a move. Uses .select() so an RLS-blocked write (which returns success
- * with ZERO rows) is detected and thrown instead of silently "succeeding".
- * Returns the authoritative row the server stored.
+ * Persist a move. Uses .select() so that an RLS-blocked write (which
+ * returns 0 rows instead of an error) is caught and thrown.
  */
 export async function applyMove(
   code: string,
@@ -114,74 +123,51 @@ export async function applyMove(
   nextPlayer: Player,
   finished: boolean,
   winner: number | null,
-): Promise<Room> {
+): Promise<void> {
   const update: Record<string, unknown> = { board, moves, current_player: nextPlayer }
   if (finished) { update.status = 'finished'; update.winner = winner }
 
   const { data, error } = await supabase
     .from('mp_rooms').update(update).eq('code', code).select()
   if (error) throw new Error(error.message)
-  if (!data || data.length === 0) {
-    throw new Error('Move not saved: 0 rows updated (the RLS UPDATE policy on mp_rooms is blocking this write).')
-  }
-  return normalizeRoom(data[0])
+  if (!data || data.length === 0)
+    throw new Error('Move not saved — the server rejected the write.')
 }
 
-export async function forfeitRoom(code: string, forfeiter: Player): Promise<Player> {
+export async function forfeitRoom(code: string, forfeiter: Player): Promise<void> {
   const winner: Player = forfeiter === 1 ? 2 : 1
   const { error } = await supabase
     .from('mp_rooms').update({ status: 'finished', winner }).eq('code', code)
   if (error) throw new Error(error.message)
-  return winner
 }
 
 export async function cancelRoom(code: string): Promise<void> {
-  // Only a still-waiting room can be cancelled; never recorded as a forfeit/loss
   const { error } = await supabase
-    .from('mp_rooms').update({ status: 'cancelled' }).eq('code', code).eq('status', 'waiting')
+    .from('mp_rooms')
+    .update({ status: 'cancelled' })
+    .eq('code', code)
+    .eq('status', 'waiting')   // only cancel if still waiting, never a live game
   if (error) throw new Error(error.message)
 }
 
-export function subscribeToRoom(code: string, onUpdate: (room: Room) => void) {
-  const channelId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
-  return supabase
-    .channel(`room-${code}-${channelId}`)
-    .on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'mp_rooms', filter: `code=eq.${code}` },
-      payload => onUpdate(normalizeRoom(payload.new as Record<string, unknown>)),
-    )
-    .subscribe()
-}
-
-/* ──────────────────────────── Matches / stats ──────────────────────────── */
+/* ────────────────────────── Match history ───────────────────────────── */
 export async function saveMpMatch(
   playerId: string,
   opponentId: string | null,
   roomCode: string,
   opponentUsername: string,
-  result: string,
+  result: 'win' | 'loss' | 'draw',
   moves: number[],
-) {
+): Promise<void> {
   const { error } = await supabase.from('mp_matches').insert({
-    player_id: playerId,
-    opponent_id: opponentId || null,
-    room_code: roomCode,
+    player_id:         playerId,
+    opponent_id:       opponentId ?? null,
+    room_code:         roomCode,
     opponent_username: opponentUsername,
     result,
     moves,
   })
   if (error) throw new Error(error.message)
-}
-
-export async function getLeaderboard(limit = 10) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, username, mp_wins')
-    .order('mp_wins', { ascending: false })
-    .limit(limit)
-  if (error) throw new Error(error.message)
-  return data ?? []
 }
 
 export async function getMpHistory(playerId: string) {
@@ -200,4 +186,14 @@ export async function getMpHistory(playerId: string) {
     moves:            (row.moves as number[]) ?? [],
     playedAt:         (row.played_at as string) ?? '',
   }))
+}
+
+export async function getLeaderboard(limit = 15) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, mp_wins')
+    .order('mp_wins', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(error.message)
+  return data ?? []
 }

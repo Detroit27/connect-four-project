@@ -1,56 +1,62 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useGameStore } from '../store/gameStore'
 import { useT } from '../i18n'
-import { createRoom, joinRoom, getMpHistory, getActiveRoom, cancelRoom } from '../lib/multiplayer'
+import {
+  createRoom, joinRoom, getMpHistory, getActiveRoom,
+  cancelRoom, forfeitRoom, normalizeRoom,
+} from '../lib/multiplayer'
 import { supabase } from '../lib/supabase'
 import { MultiplayerGame } from '../components/multiplayer/MultiplayerGame'
 import { Leaderboard } from '../components/multiplayer/Leaderboard'
 import type { Room, MpMatch, Player } from '../types'
 import styles from './MultiplayerView.module.css'
 
-type MPScreen = 'lobby' | 'waiting' | 'game'
-
 export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void }) {
   const t = useT()
   const { user, profile } = useAuthStore()
   const { setReplayMatch } = useGameStore()
 
-  const [mpScreen, setMpScreen] = useState<MPScreen>('lobby')
-  const [room, setRoom]         = useState<Room | null>(null)
-  const [myPlayer, setMyPlayer] = useState<Player>(1)
-  const [joinCode, setJoinCode] = useState('')
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [history, setHistory]   = useState<MpMatch[]>([])
-  const [checking, setChecking] = useState(true)
+  // Which top-level screen we're on
+  const [screen, setScreen]       = useState<'lobby' | 'game'>('lobby')
+  // The user's current active/waiting room (null = no room)
+  const [activeRoom, setActiveRoom] = useState<Room | null>(null)
+  // 1 = host, 2 = guest
+  const [myPlayer, setMyPlayer]   = useState<Player>(1)
+
+  const [joinCode, setJoinCode]   = useState('')
+  const [error, setError]         = useState('')
+  const [loading, setLoading]     = useState(false)
+  const [history, setHistory]     = useState<MpMatch[]>([])
+  const [checking, setChecking]   = useState(true)
+
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const stopPoll = () => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
   }
 
-  // Poll waiting room until guest joins
-  const startWaitingPoll = (code: string) => {
+  // Poll the waiting room every 1.5 s until a guest appears.
+  // Once the guest joins, update the banner → host can click Resume.
+  const startWaitingPoll = useCallback((code: string) => {
     stopPoll()
     pollRef.current = setInterval(async () => {
       try {
         const { data } = await supabase
           .from('mp_rooms').select().eq('code', code).maybeSingle() as any
-        if (data?.guest_id) {
-          setRoom(data as Room)
-          setMpScreen('game')
+        if (data?.guest_id && data.status === 'playing') {
+          setActiveRoom(normalizeRoom(data as Record<string, unknown>))
           stopPoll()
         }
-      } catch { /* ignore */ }
+      } catch { /* network hiccup — next tick retries */ }
     }, 1500)
-  }
+  }, [])
 
-  const refreshHistory = () => {
+  const refreshHistory = useCallback(() => {
     if (user) getMpHistory(user.id).then(d => setHistory(d as MpMatch[])).catch(() => {})
-  }
+  }, [user])
 
-  // On mount: load history and resume any in-progress room
+  // On mount: restore any in-progress room + load match history
   useEffect(() => {
     if (!user) { setChecking(false); return }
     Promise.all([
@@ -60,22 +66,16 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
       setHistory(h as MpMatch[])
       if (active) {
         const r = active as Room
-        setRoom(r)
-        const player: Player = r.host_id === user.id ? 1 : 2
-        setMyPlayer(player)
-        if (r.status === 'waiting') {
-          setMpScreen('waiting')
-          startWaitingPoll(r.code)
-        } else {
-          setMpScreen('game')
-        }
+        setActiveRoom(r)
+        setMyPlayer(r.host_id === user.id ? 1 : 2)
+        if (r.status === 'waiting') startWaitingPoll(r.code)
       }
       setChecking(false)
     })
     return stopPoll
   }, [user])
 
-  // ── Auth gate ──
+  // ── Auth gate ──────────────────────────────────────────────────────────
   if (!user) {
     return (
       <div className={styles.authWall}>
@@ -87,34 +87,48 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
 
   const myUsername = profile?.username ?? user.email ?? 'You'
 
-  // ── In game ──
-  if (mpScreen === 'game' && room) {
+  // ── In-game screen ─────────────────────────────────────────────────────
+  if (screen === 'game' && activeRoom) {
     return (
       <MultiplayerGame
-        roomCode={room.code}
-        initialBoard={room.board}
-        initialMoves={room.moves ?? []}
+        roomCode={activeRoom.code}
+        initialBoard={activeRoom.board}
+        initialMoves={activeRoom.moves ?? []}
         myPlayer={myPlayer}
         myUsername={myUsername}
-        opponentUsername={myPlayer === 1 ? (room.guest_username ?? '?') : room.host_username}
-        onExit={() => {
+        opponentUsername={
+          myPlayer === 1 ? (activeRoom.guest_username ?? '?') : activeRoom.host_username
+        }
+        // Back pressed mid-game: return to lobby but keep activeRoom so the
+        // banner shows "Active match" with Resume / Forfeit
+        onLeave={() => setScreen('lobby')}
+        // Main menu pressed after game ended: clear everything
+        onFinished={() => {
           stopPoll()
-          setRoom(null)
-          setMpScreen('lobby')
+          setActiveRoom(null)
+          setScreen('lobby')
           refreshHistory()
         }}
       />
     )
   }
 
-  // ── Lobby actions ──
+  // ── Lobby actions ──────────────────────────────────────────────────────
   const handleCreate = async () => {
     setLoading(true); setError('')
     try {
+      // Guard: don't create a second room if one already exists
+      const existing = await getActiveRoom(user.id)
+      if (existing) {
+        const r = existing as Room
+        setActiveRoom(r)
+        setMyPlayer(r.host_id === user.id ? 1 : 2)
+        if (r.status === 'waiting') startWaitingPoll(r.code)
+        return
+      }
       const r = await createRoom(user.id, myUsername)
-      setRoom(r)
+      setActiveRoom(r)
       setMyPlayer(1)
-      setMpScreen('waiting')
       startWaitingPoll(r.code)
     } catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
@@ -125,47 +139,88 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     setLoading(true); setError('')
     try {
       const r = await joinRoom(joinCode.trim(), user.id, myUsername)
-      setRoom(r)
+      setActiveRoom(r)
       setMyPlayer(2)
       setJoinCode('')
-      setMpScreen('game')
+      setScreen('game')           // guest goes straight into the game
     } catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
   }
 
   const handleCancel = () => {
-    const code = room?.code
+    const code = activeRoom?.code
     stopPoll()
-    setRoom(null)
-    setMpScreen('lobby')
+    setActiveRoom(null)
     if (code) cancelRoom(code).catch(() => {})
   }
 
+  const handleForfeit = async () => {
+    if (!activeRoom || !window.confirm(t.multiplayer.forfeitConfirm)) return
+    const player: Player = activeRoom.host_id === user.id ? 1 : 2
+    stopPoll()
+    setActiveRoom(null)
+    forfeitRoom(activeRoom.code, player).catch(() => {})
+  }
+
+  const handleResume = () => setScreen('game')
+
+  // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className={styles.container}>
       <div className={styles.main}>
+
+        {/* ── Status banner — always visible while there's an active/waiting room ── */}
+        {!checking && activeRoom && (
+          <div
+            className={`${styles.activeBanner} ${
+              activeRoom.status === 'waiting' ? styles.bannerWaiting : styles.bannerPlaying
+            }`}
+          >
+            <div className={styles.activeBannerInfo}>
+              <span className={styles.activeBannerTitle}>
+                {activeRoom.status === 'waiting'
+                  ? t.multiplayer.waitingMatch
+                  : t.multiplayer.activeMatch}
+              </span>
+              <span className={styles.activeBannerCode}>
+                {t.multiplayer.activeCode}: <b>{activeRoom.code}</b>
+                {activeRoom.status === 'waiting' && (
+                  <>&nbsp;<span className={styles.waitDots}><span /><span /><span /></span></>
+                )}
+              </span>
+            </div>
+            <div className={styles.activeBannerActions}>
+              {activeRoom.status === 'waiting' ? (
+                <button className="btn-ghost" onClick={handleCancel}>
+                  {t.multiplayer.cancelWait}
+                </button>
+              ) : (
+                <>
+                  <button className="btn-primary" onClick={handleResume}>
+                    {t.multiplayer.resume}
+                  </button>
+                  <button className="btn-ghost" onClick={handleForfeit}>
+                    {t.multiplayer.forfeit}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Create / Join ── */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>{t.multiplayer.title}</h2>
 
           {checking ? (
             <p className={styles.empty}>{t.common.loading}</p>
-          ) : mpScreen === 'waiting' && room ? (
-            // ── Waiting for opponent ──
-            <div className={styles.waiting}>
-              <p className={styles.shareLabel}>{t.multiplayer.shareCode}</p>
-              <div className={styles.codeBox}>{room.code}</div>
-              <p className={styles.waitingLabel}>
-                {t.multiplayer.waitingForOpponent}
-                <span className={styles.waitDots}><span /><span /><span /></span>
-              </p>
-              <button className="btn-ghost" style={{ marginTop: 8 }} onClick={handleCancel}>
-                {t.multiplayer.cancelWait}
-              </button>
-            </div>
           ) : (
-            // ── Lobby: create or join ──
             <div className={styles.lobbyActions}>
-              <button className={`btn-primary ${styles.bigBtn}`} onClick={handleCreate} disabled={loading}>
+              <button
+                className={`btn-primary ${styles.bigBtn}`}
+                onClick={handleCreate}
+                disabled={loading || !!activeRoom}
+              >
                 {t.multiplayer.createRoom}
               </button>
               <div className={styles.joinRow}>
@@ -174,10 +229,17 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
                   placeholder={t.multiplayer.enterCode}
                   value={joinCode}
                   onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                  onKeyDown={e => { if (e.key === 'Enter' && joinCode.trim() && !loading) handleJoin() }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && joinCode.trim() && !loading) handleJoin()
+                  }}
                   maxLength={6}
+                  disabled={!!activeRoom}
                 />
-                <button className={`btn-primary ${styles.bigBtn}`} onClick={handleJoin} disabled={loading || !joinCode.trim()}>
+                <button
+                  className={`btn-primary ${styles.bigBtn}`}
+                  onClick={handleJoin}
+                  disabled={loading || !joinCode.trim() || !!activeRoom}
+                >
                   {t.multiplayer.join}
                 </button>
               </div>
@@ -186,7 +248,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
           )}
         </div>
 
-        {/* Match history */}
+        {/* ── Match history ── */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>{t.multiplayer.matchHistory}</h2>
           {history.length === 0 ? (
@@ -196,7 +258,11 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
               {history.map((m: MpMatch) => (
                 <div key={m.id} className={styles.matchRow}>
                   <span className={`${styles.result} ${styles[m.result]}`}>
-                    {m.result === 'win' ? t.singleplayer.won : m.result === 'loss' ? t.singleplayer.lost : t.singleplayer.draw}
+                    {m.result === 'win'
+                      ? t.singleplayer.won
+                      : m.result === 'loss'
+                      ? t.singleplayer.lost
+                      : t.singleplayer.draw}
                   </span>
                   <span className={styles.meta}>vs {m.opponentUsername}</span>
                   <button className={styles.replayBtn} onClick={() => setReplayMatch(m)}>
@@ -207,6 +273,7 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
             </div>
           )}
         </div>
+
       </div>
 
       <aside className={styles.sidebar}>
