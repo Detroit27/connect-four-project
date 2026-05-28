@@ -70,8 +70,20 @@ export async function pushMove(
   const update: Record<string, unknown> = { board, moves, current_player: nextPlayer }
   if (status) update.status = status
   if (winner !== undefined) update.winner = winner
-  const { error } = await supabase.from('mp_rooms').update(update).eq('code', code)
+  // .select() so we can tell whether a row was actually updated. An RLS-blocked
+  // UPDATE returns success with ZERO rows (no error), which would otherwise look
+  // like the move saved when it silently didn't.
+  const { data, error } = await supabase
+    .from('mp_rooms')
+    .update(update)
+    .eq('code', code)
+    .select()
   if (error) throw new Error(error.message)
+  if (!data || data.length === 0) {
+    throw new Error(
+      'Move was not saved: 0 rows updated. The row-level-security UPDATE policy on mp_rooms is blocking this write.',
+    )
+  }
 }
 
 export async function saveMpMatch(
