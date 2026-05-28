@@ -47,6 +47,8 @@ export const ru: Translations = {
   config: {
     title: 'Настройки', appearance: 'Внешний вид', theme: 'Тема', light: 'Светлая', dark: 'Тёмная',
     language: 'Язык', account: 'Аккаунт', signInDesc: 'Войдите, чтобы сохранять прогресс.', signedInAs: 'Вы вошли как',
+    changeUsername: 'Изменить имя', usernamePlaceholder: 'Новое имя', save: 'Сохранить',
+    usernameSaved: 'Имя обновлено!', usernameTaken: 'Это имя уже занято.',
   },
   replay: { title: 'Повтор матча', move: 'Ход', of: 'из', close: 'Закрыть' },
 }

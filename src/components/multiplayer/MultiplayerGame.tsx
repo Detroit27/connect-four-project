@@ -89,7 +89,8 @@ export function MultiplayerGame({
             .update({ mp_wins: (data.mp_wins ?? 0) + 1 }).eq('id', user.id)
         })
     }
-    saveMpMatch(user.id, '', roomCode, opponentUsername, result, moves).catch(() => {})
+    saveMpMatch(user.id, null, roomCode, opponentUsername, result, moves)
+      .catch(e => console.error('[MP] saveMpMatch failed:', e))
   }, [ended, saved]) // eslint-disable-line
 
   // --- Player move ---

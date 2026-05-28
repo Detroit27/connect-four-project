@@ -17,6 +17,7 @@ interface AuthState {
   loadProfile: (userId: string) => Promise<void>
   updateCurrencyOnServer: (amount: number) => Promise<void>
   updateSkinOnServer: (skinId: string, inventory: string[]) => Promise<void>
+  updateUsername: (username: string) => Promise<void>
   setError: (e: string | null) => void
 }
 
@@ -97,6 +98,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { user } = get()
     if (!user) return
     await supabase.from('profiles').update({ current_skin: skinId, inventory }).eq('id', user.id)
+  },
+
+  updateUsername: async (username) => {
+    const { user } = get()
+    if (!user) return
+    const trimmed = username.trim()
+    if (trimmed.length < 3) throw new Error('Username must be at least 3 characters.')
+    if (trimmed.length > 20) throw new Error('Username must be 20 characters or less.')
+    const { error } = await supabase
+      .from('profiles')
+      .update({ username: trimmed })
+      .eq('id', user.id)
+    if (error) {
+      // Unique constraint violation
+      if (error.code === '23505') throw new Error('That username is already taken.')
+      throw new Error(error.message)
+    }
+    set(s => ({ profile: s.profile ? { ...s.profile, username: trimmed } : null }))
   },
 
   setError: (authError) => set({ authError }),

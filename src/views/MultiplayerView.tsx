@@ -149,8 +149,8 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     <div className={styles.container}>
       <div className={styles.main}>
 
-        {/* Active match banner */}
-        {!checkingActive && activeRoom && (
+        {/* Active match banner — only in lobby, not while waiting/playing */}
+        {!checkingActive && activeRoom && mpScreen === 'lobby' && (
           <div className={styles.activeBanner}>
             <div className={styles.activeBannerInfo}>
               <span className={styles.activeBannerTitle}>{t.multiplayer.activeMatch}</span>

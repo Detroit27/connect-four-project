@@ -76,7 +76,7 @@ export async function pushMove(
 
 export async function saveMpMatch(
   playerId: string,
-  opponentId: string,
+  opponentId: string | null,   // null is fine — column allows it
   roomCode: string,
   opponentUsername: string,
   result: string,
@@ -84,7 +84,7 @@ export async function saveMpMatch(
 ) {
   const { error } = await supabase.from('mp_matches').insert({
     player_id: playerId,
-    opponent_id: opponentId,
+    opponent_id: opponentId || null,  // guard: never pass empty string to a UUID column
     room_code: roomCode,
     opponent_username: opponentUsername,
     result,
@@ -148,5 +148,13 @@ export async function getMpHistory(playerId: string) {
     .order('played_at', { ascending: false })
     .limit(30)
   if (error) throw new Error(error.message)
-  return data ?? []
+  // Map snake_case DB columns → camelCase MpMatch fields
+  return (data ?? []).map(row => ({
+    id:               row.id as string,
+    roomCode:         row.room_code as string ?? '',
+    opponentUsername: (row.opponent_username as string) ?? '?',
+    result:           row.result as 'win' | 'loss' | 'draw',
+    moves:            (row.moves as number[]) ?? [],
+    playedAt:         row.played_at as string ?? '',
+  }))
 }

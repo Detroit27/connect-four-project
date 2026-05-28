@@ -45,6 +45,8 @@ export const en = {
   config: {
     title: 'Config', appearance: 'Appearance', theme: 'Theme', light: 'Light', dark: 'Dark',
     language: 'Language', account: 'Account', signInDesc: 'Sign in to save progress across devices.', signedInAs: 'Signed in as',
+    changeUsername: 'Change username', usernamePlaceholder: 'New username', save: 'Save',
+    usernameSaved: 'Username updated!', usernameTaken: 'That username is already taken.',
   },
   replay: { title: 'Match Replay', move: 'Move', of: 'of', close: 'Close' },
 }
