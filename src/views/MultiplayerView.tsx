@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useGameStore } from '../store/gameStore'
 import { useT } from '../i18n'
-import { createRoom, joinRoom, getMpHistory, getActiveRoom, forfeitRoom, subscribeToRoom } from '../lib/multiplayer'
+import { createRoom, joinRoom, getMpHistory, getActiveRoom, forfeitRoom, cancelRoom, subscribeToRoom } from '../lib/multiplayer'
 import { supabase } from '../lib/supabase'
 import { MultiplayerGame } from '../components/multiplayer/MultiplayerGame'
 import { Leaderboard } from '../components/multiplayer/Leaderboard'
@@ -142,9 +142,9 @@ export function MultiplayerView({ onAuthRequired }: { onAuthRequired: () => void
     // after a reload (only activeRoom is set, room is null).
     const code = room?.code ?? activeRoom?.code
     if (!code) return
-    // Update the UI immediately so Cancel always responds, then release the room.
+    // Update the UI immediately so Cancel always responds, then cancel the waiting room.
     setRoom(null); setActiveRoom(null); setMpScreen('lobby')
-    forfeitRoom(code, 1).catch(() => {})
+    cancelRoom(code).catch(e => console.error('[MP] cancel room failed:', e))
   }
 
   const handleForfeitActive = async () => {

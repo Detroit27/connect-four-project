@@ -127,6 +127,15 @@ export async function forfeitRoom(code: string, forfeiterPlayer: 1 | 2) {
   return winner as 1 | 2
 }
 
+export async function cancelRoom(code: string) {
+  const { error } = await supabase
+    .from('mp_rooms')
+    .update({ status: 'cancelled', winner: null })
+    .eq('code', code)
+    .eq('status', 'waiting')
+  if (error) throw new Error(error.message)
+}
+
 export async function getActiveRoom(userId: string) {
   const { data, error } = await supabase
     .from('mp_rooms')

@@ -51,6 +51,6 @@ export interface Room {
   board: Board
   moves: number[]
   current_player: Player
-  status: 'waiting' | 'playing' | 'finished'
+  status: 'waiting' | 'playing' | 'finished' | 'cancelled'
   winner: number | null
 }
