@@ -43,29 +43,26 @@ export function MultiplayerGame({
   const [forfeitWinner, setForfeitWinner] = useState<Player | null>(null)
   const [saved, setSaved]                 = useState(false)
   const channelRef = useRef<RealtimeChannel | null>(null)
-  const movesRef = useRef<number[]>(initialMoves)
 
   const ended    = !!(winInfo || isDraw || forfeitWinner)
   const isMyTurn = currentPlayer === myPlayer
   const myUsername = profile?.username ?? user?.email ?? 'You'
-
-  useEffect(() => {
-    movesRef.current = moves
-  }, [moves])
 
   // Win-blink: column where I can win in one move
   const blinkCol = (!ended && isMyTurn)
     ? getWinningMove(board, myPlayer)
     : null
 
+  const parseJsonField = <T,>(value: unknown, fallback: T): T => {
+    if (typeof value !== 'string') return (value ?? fallback) as T
+    try { return JSON.parse(value) as T } catch { return fallback }
+  }
+
   /** Apply a room snapshot — used by both Realtime and polling */
   const applyRoom = useCallback((room: Record<string, unknown>) => {
-    const b  = room.board as BoardType
-    const m  = room.moves as number[]
-    const cp = room.current_player as Player
-
-    // Do not let a slow poll overwrite a newer local move with an older DB snapshot.
-    if ((m?.length ?? 0) < movesRef.current.length) return
+    const b = parseJsonField<BoardType>(room.board, board)
+    const m = parseJsonField<number[]>(room.moves, moves)
+    const cp = Number(room.current_player) === 2 ? 2 : 1
 
     setBoard(b); setMoves(m); setCurrentPlayer(cp)
 
@@ -79,7 +76,7 @@ export function MultiplayerGame({
       if (win) setWinInfo(win)
       else if (isBoardFull(b)) setIsDraw(true)
     }
-  }, [])
+  }, [board, moves])
 
   // --- Realtime subscription ---
   useEffect(() => {
